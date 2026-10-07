@@ -1,0 +1,4187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<title>Mon Monde — bac à sable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:#05070F;color:#E9EAF4;overflow:hidden;
+    font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.45;-webkit-user-select:none;user-select:none}
+  #scene{position:fixed;inset:0;touch-action:none;cursor:grab}
+  #scene.drag{cursor:grabbing}
+  #scene canvas{display:block;width:100%;height:100%}
+  .f{font-family:"Space Grotesk","Trebuchet MS",system-ui,sans-serif}
+
+  /* ── barre du haut ── */
+  /* la barre s'arrête au bord de l'atelier : sinon les boutons du bac à sable
+     passent dessous et se superposent à son titre */
+  .haut{position:fixed;top:0;left:0;right:352px;z-index:6;display:flex;align-items:center;
+    flex-wrap:wrap;gap:9px 7px;padding:13px 16px calc(13px);pointer-events:none}
+  .haut.large{right:0}
+  .outils{margin-left:auto;display:flex;align-items:center;flex-wrap:wrap;
+    justify-content:flex-end;gap:0 2px;pointer-events:auto}
+  .puce{background:rgba(10,14,30,.72);border:1px solid rgba(255,255,255,.1);border-radius:99px;
+    padding:6px 14px;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:14px;
+    backdrop-filter:blur(5px);pointer-events:auto;white-space:nowrap}
+  .puce b{font-variant-numeric:tabular-nums}
+  .puce.cri{color:#9BE0FF} .puce.gra{color:#FFD9A0}
+  .puce.bac{color:#FFC9A0;border-color:rgba(255,201,160,.45);
+    text-transform:uppercase;letter-spacing:.1em;font-size:11.5px}
+  .sauve{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:#7FD8A4;
+    opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+  .sauve.vu{opacity:.85}
+
+  /* ── la fenêtre de sauvegarde ── */
+  .voile{position:fixed;inset:0;z-index:20;background:rgba(3,5,12,.72);
+    display:flex;align-items:center;justify-content:center;padding:18px}
+  .voile[hidden]{display:none!important}
+  .boite{background:#0C1022;border:1px solid rgba(255,255,255,.14);border-radius:18px;
+    padding:20px;max-width:560px;width:100%;max-height:86vh;overflow:auto}
+  .boite h2{font-family:"Space Grotesk",sans-serif;font-size:19px;margin:0 0 4px}
+  .boite p{font-size:13.5px;line-height:1.5;opacity:.78;margin:0 0 12px}
+  .boite textarea{width:100%;height:120px;background:rgba(255,255,255,.05);color:#E9EAF4;
+    border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:10px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;resize:vertical;
+    word-break:break-all}
+  .boite input[type=text]{width:100%;background:rgba(255,255,255,.05);color:#E9EAF4;
+    border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:10px 12px;
+    font:inherit;font-size:15px}
+  .rang{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .bt{font:inherit;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:14px;
+    padding:9px 15px;border-radius:11px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.07);color:#E9EAF4;cursor:pointer}
+  .bt:hover{border-color:rgba(255,255,255,.4)}
+  .bt.pri{background:rgba(155,224,255,.16);border-color:rgba(155,224,255,.5);color:#CFEFFF}
+  .bt.dan{background:rgba(255,140,124,.13);border-color:rgba(255,140,124,.45);color:#FFC2B8}
+  .msg{font-size:12.5px;margin-top:9px;min-height:16px;color:#9BE0FF}
+  .msg.mal{color:#FFB4A8}
+  .puce.nom{cursor:text;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+  .lien{background:none;border:none;color:#E6E9FA;font:inherit;font-size:13.5px;cursor:pointer;
+    pointer-events:auto;opacity:.8;text-decoration:underline;text-underline-offset:3px;padding:6px}
+  .lien:hover{opacity:1}
+
+  /* ── panneau boutique ── */
+  .pan{position:fixed;top:0;right:0;bottom:0;width:352px;max-width:86vw;z-index:5;
+    background:rgba(8,11,24,.86);backdrop-filter:blur(11px);
+    border-left:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;
+    transform:translateX(0);transition:transform .3s ease}
+  .pan.ferme{transform:translateX(100%)}
+  .pan header{padding:16px 18px 10px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .pan h1{font-family:"Space Grotesk",sans-serif;font-size:20px;font-weight:700;margin:0}
+  .pan .st{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.55;margin:2px 0 0}
+  .onglets{display:flex;gap:6px;padding:11px 14px 0}
+  .onglets button[hidden]{display:none}
+  .onglets button{flex:1;font:inherit;font-family:"Space Grotesk",sans-serif;font-weight:600;
+    font-size:12px;padding:8px 2px;border-radius:11px 11px 0 0;border:1px solid transparent;
+    border-bottom:none;background:transparent;color:#9FA3BE;cursor:pointer}
+  .onglets button.on{background:rgba(255,255,255,.07);color:#E9EAF4;border-color:rgba(255,255,255,.12)}
+  .liste{flex:1;overflow-y:auto;padding:11px 14px 16px}
+  .art{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+    padding:9px 12px;margin-bottom:7px;color:#E9EAF4;cursor:pointer}
+  .art:hover{border-color:rgba(255,255,255,.3)}
+  .art.on{background:rgba(155,224,255,.14);border-color:rgba(155,224,255,.55)}
+  .art.pris{opacity:.5;cursor:default}
+  .art.cher{opacity:.42}
+  .art .ic{width:30px;height:30px;border-radius:8px;flex:none;display:flex;align-items:center;
+    justify-content:center;font-size:17px;background:rgba(255,255,255,.08)}
+  .art .tx{flex:1;min-width:0}
+  .art .n{font-weight:600;font-size:14.5px;display:block;line-height:1.2}
+  .art .s{font-size:11.5px;opacity:.6;display:block}
+  .art .pr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:14px;color:#9BE0FF;
+    flex:none;white-space:nowrap}
+  .art.pris .pr{color:#7FD8A4}
+  .grp{font-size:11px;text-transform:uppercase;letter-spacing:.11em;opacity:.45;
+    margin:13px 0 7px;font-weight:600}
+  .grp:first-child{margin-top:2px}
+  .vide{font-size:13px;opacity:.55;line-height:1.5;padding:6px 2px}
+  .releve{display:flex;flex-direction:column;gap:3px;opacity:.72}
+  .releve b{color:#9BE0FF;font-variant-numeric:tabular-nums}
+  .releve .ec b{color:#FFD9A0}
+
+  /* ── bandeau du bas ── */
+  .bas{position:fixed;left:0;right:352px;bottom:0;z-index:6;display:flex;justify-content:center;
+    padding:0 16px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}
+  .bas.large{right:0}
+  .info{background:rgba(10,14,30,.76);border:1px solid rgba(255,255,255,.1);border-radius:14px;
+    padding:9px 16px;font-size:13.5px;backdrop-filter:blur(5px);pointer-events:auto;
+    max-width:min(560px,92vw);text-align:center;line-height:1.4}
+  .info b{color:#9BE0FF}
+  .info .ret,.info .act{margin-left:9px;font-size:12.5px;text-decoration:underline;
+    text-underline-offset:3px;cursor:pointer;background:none;border:none;font-family:inherit}
+  .info .ret{color:#FFB4A8}
+  .info .act{color:#9BE0FF}
+
+  .charge{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    z-index:9;background:#05070F;font-size:14px;letter-spacing:.06em;opacity:.75}
+  .charge[hidden]{display:none!important}
+  .ouvrir{position:fixed;right:16px;top:58px;z-index:7;display:none;
+    background:rgba(10,14,30,.8);border:1px solid rgba(255,255,255,.16);text-decoration:none;
+    font-family:"Space Grotesk",sans-serif;font-weight:600}
+  .pan.ferme ~ .ouvrir{display:block}
+  #bFermer{display:none}
+  @media (max-width:760px){ #bFermer{display:block} }
+
+  @media (max-width:760px){
+    .pan{top:auto;left:0;right:0;bottom:0;width:100%;max-width:100%;height:52vh;
+      border-left:none;border-top:1px solid rgba(255,255,255,.09);
+      transform:translateY(0);border-radius:16px 16px 0 0}
+    .pan.ferme{transform:translateY(calc(100% - 0px))}
+    .bas{right:0;bottom:52vh;padding-bottom:10px}
+    .bas.large{bottom:0;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+    .haut{right:0;padding:10px 12px}
+    .puce{font-size:12.5px;padding:5px 11px}
+    .ouvrir{top:auto;bottom:14px;right:14px}
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div class="charge" id="charge">on assemble le monde…</div>
+
+<div class="haut" id="barre">
+  <span class="puce nom f" id="pNom" contenteditable="false">Ma planète</span>
+  <span class="puce cri" id="pCri">◆ <b>0</b></span>
+  <span class="puce gra" id="pGra" hidden>✦ <b>0</b></span>
+  <span class="puce bac f" id="pBac" hidden>bac à sable</span>
+  <span class="sauve" id="sauve">sauvegardé</span>
+  <span class="outils">
+    <button class="lien" id="bTout" hidden>Tout débloquer</button>
+    <button class="lien" id="bNeuf" hidden>Nouvelle planète</button>
+    <button class="lien" id="bFin" hidden>Finesse : 642</button>
+    <button class="lien" id="bExplorer">↓ Explorer</button>
+    <button class="lien" id="bSol" hidden>↑ Remonter</button>
+    <button class="lien" id="bSauve">Ma sauvegarde</button>
+    <button class="lien" id="bRenommer">Renommer</button>
+    <button class="lien" id="bSortir" hidden>Quitter</button>
+  </span>
+</div>
+
+<div class="voile" id="voile" hidden>
+  <div class="boite" id="boite"></div>
+</div>
+
+<div class="bas" id="bandeau">
+  <div class="info" id="info">Fais tourner la planète avec le doigt.</div>
+</div>
+
+<div class="pan" id="pan">
+  <header>
+    <button class="lien" id="bFermer" style="float:right;margin:-4px -6px 0 0">Fermer</button>
+    <h1 class="f">L'atelier</h1>
+    <p class="st" id="soldeTxt">0 cristal</p>
+  </header>
+  <div class="onglets">
+    <button type="button" data-tab="terra" class="on">Transformer</button>
+    <button type="button" data-tab="poser">Poser</button>
+    <button type="button" data-tab="terre">Terrain</button>
+    <button type="button" data-tab="betes">Animaux</button>
+  </div>
+  <div class="liste" id="liste"></div>
+</div>
+<button class="lien puce ouvrir" id="bOuvrir">L'atelier</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.128.0/three.min.js"></script>
+<script>
+if(!window.THREE){ document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/scr'+'ipt>'); }
+</script>
+<script>
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+if(!window.THREE){ $("charge").textContent = "La bibliothèque 3D n'a pas pu être chargée."; return; }
+
+var BAC = true;
+
+/* ═══════════════ le barème ═══════════════
+   Cinq nombres, et c'est tout le système économique du monde. Les changer ici
+   les change partout : dans l'atelier, dans l'étiquette du hub, et dans le
+   relevé montré au patient. */
+var GAIN = {
+  depart:   15,   /* de quoi s'offrir la première transformation tout de suite */
+  parJeu:    5,   /* pour chaque jeu mené à son terme */
+  parJour:  12,   /* pour chaque jour où le patient est venu : c'est le gros */
+  parRecord: 3,   /* un petit quelque chose pour un record personnel */
+  jourEclat: 5    /* un éclat ✦ tous les cinq jours de venue */
+};
+/* Le jour, et non la séance : sinon enchaîner dix parties d'affilée rapporterait
+   autant que revenir dix fois, et c'est le retour qu'on veut renforcer. */
+function gainsDe(liste){
+  var jours = {}, jeux = 0, rec = 0;
+  (liste || []).forEach(function(l){
+    jeux++;
+    if(l.record) rec++;
+    if(l.date) jours[l.date] = 1;
+  });
+  var nj = Object.keys(jours).length;
+  return {
+    cri: GAIN.depart + jeux*GAIN.parJeu + nj*GAIN.parJour + rec*GAIN.parRecord,
+    gra: Math.floor(nj / GAIN.jourEclat),
+    jeux: jeux, jours: nj, records: rec
+  };
+}
+
+/* ═══════════════ état, code patient, sauvegarde ═══════════════ */
+/* BAC : la version d'essai du clinicien. Rangée sous une autre clé, avec une
+   réserve de cristaux qu'on ne peut pas épuiser, pour pouvoir tout regarder
+   sans toucher aux planètes des patients. */
+var K_MONDE = BAC ? "orbite_monde_bac_v1" : "orbite_monde_v1";
+var K_LOG = "archipel_log_v1";
+                    /* de quoi s'offrir la première chose tout de suite */
+
+var K_CODE = "orbite_monde_code";
+/* Dans L'Orbite le code vient du hub. Ouverte seule, la page se souvient du
+   dernier code saisi : le patient qui la garde en marque-page retrouve sa
+   planète sans rien retaper. */
+var DANS_ORBITE = (function(){
+  try{ var p = window.parent; return !!(p && p !== window && p.ORBITE); }catch(e){ return false; }
+})();
+/* Deux codes, et il faut les distinguer. CODE_LOG est celui qui figure dans le
+   journal des séances — il peut être vide quand le clinicien n'a ouvert aucune
+   séance. CODE est celui sous lequel la planète est rangée, et il ne peut pas
+   être vide, d'où « essai ». Les confondre faisait que le hub et la planète
+   n'annonçaient pas le même solde lors d'une démonstration sans code. */
+var CODE_LOG = (function(){
+  if(BAC) return "bac";
+  try{ var p = window.parent;
+    if(p && p !== window && p.ORBITE && typeof p.ORBITE.code === "string") return p.ORBITE.code;
+  }catch(e){}
+  if(DANS_ORBITE) return "";
+  try{ var c = localStorage.getItem(K_CODE); if(c) return c; }catch(e){}
+  return "essai";
+})();
+var CODE = CODE_LOG || "essai";
+var RETOUR = (function(){
+  try{ var p = window.parent; if(p && p !== window && p.ORBITE && p.ORBITE.retour) return p.ORBITE.retour; }catch(e){}
+  return null;
+})();
+
+function hash(t){
+  var h = 5381;
+  for(var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+  return h;
+}
+function lireTout(){ try{ return JSON.parse(localStorage.getItem(K_MONDE) || "{}"); }catch(e){ return {}; } }
+function sauver(){
+  /* on grave la dépense dans la sauvegarde : L'Orbite affiche ainsi le solde
+     sans avoir à embarquer une copie du catalogue et de ses prix */
+  M.dep = depense();
+  /* On grave aussi ce qui a été gagné. Le journal des séances ne voyage pas
+     avec la sauvegarde — et il peut disparaître d'un simple nettoyage du
+     navigateur. Sans cette trace, un patient qui reprend sa planète ailleurs
+     la retrouverait avec un solde négatif et ne pourrait plus rien acheter. */
+  M.gag = Math.max(M.gag || 0, gainsDe(seances()).cri);
+  /* toute écriture peut avoir changé un sol ou une transformation : on invalide
+     le cache de couleurs ici, une bonne fois, plutôt qu'à chaque appelant */
+  couleursSales = true;
+  var t = lireTout(); t[CODE] = M;
+  try{ localStorage.setItem(K_MONDE, JSON.stringify(t)); }catch(e){}
+  try{ if(window.parent && window.parent !== window && window.parent.ORBITE
+        && window.parent.ORBITE.miroirMonde) window.parent.ORBITE.miroirMonde(); }catch(e){}
+  annoncerSauvegarde();
+}
+var M = (function(){
+  var t = lireTout()[CODE];
+  if(t && t.glob && t.cells) return t;
+  return { nom:"Ma planète", graine: hash(CODE) % 100000, niv:3, glob:{}, cells:{} };
+})();
+/* Le niveau de finesse est gravé dans le monde à sa création : les cases sont
+   repérées par leur numéro, et ce numéro change avec la finesse. Un monde déjà
+   commencé garde donc le sien, quoi qu'il arrive au réglage par défaut. */
+if(!M.niv) M.niv = 3;
+if(!M.pos) M.pos = {};              /* place fine d'un objet dans sa case */
+if(!M.decors) M.decors = {};        /* petits décors posés au sol */
+if(!M.terre) M.terre = {};          /* cases dont le patient a changé le sol */
+if(!M.betes) M.betes = {};          /* ce qui vit sur la planète */
+var GRAINE = M.graine;
+
+/* ═══════════════ ce qui s'achète ═══════════════ */
+/* Les prix sont taillés pour que chacune des premières venues produise une
+   transformation visible : la planète devient un monde pendant que le patient
+   est encore en train de découvrir l'outil, et la longue traîne est le
+   meublage — objets, décors, animaux — qui, lui, n'a pas de fin. Un catalogue
+   dont les gros effets arrivent au bout de six semaines ne renforce rien. */
+var TERRA = [
+  { id:"atmos",  nom:"Une atmosphère", ic:"🜁", prix:10,
+    s:"Le ciel se colore et la planète respire" },
+  { id:"eau",    nom:"De l'eau",       ic:"🌊", prix:18,
+    s:"Les bassins se remplissent, les océans apparaissent" },
+  { id:"herbe",  nom:"De la végétation", ic:"🌿", prix:26,
+    s:"Les plaines verdissent" },
+  { id:"relief", nom:"Du relief",      ic:"⛰", prix:36,
+    s:"Les montagnes se soulèvent et la neige s'installe" },
+  { id:"climat", nom:"Un climat",      ic:"❄", prix:48,
+    s:"Déserts, toundras et banquises se répartissent" },
+  { id:"nuages", nom:"Des nuages",     ic:"☁", prix:60,
+    s:"Un voile de nuages tourne au-dessus du sol" },
+  { id:"lune",   nom:"Une lune",       ic:"🌘", prix:75,
+    s:"Un satellite se met en orbite" },
+  { id:"anneau", nom:"Un anneau",      ic:"◯", prix:95,
+    s:"Un anneau de poussière ceinture la planète" }
+];
+
+/* req : la transformation qui révèle le biome. Le catalogue grandit avec la
+   planète — au premier passage, il n'y a qu'une chose à faire, et c'est voulu. */
+var OBJETS = {
+  arbre:   { nom:"Un arbre",       ic:"🌳", prix:2,  bio:["plaine","toundra"], req:"herbe" },
+  foret:   { nom:"Une forêt",      ic:"🌲", prix:6,  bio:["plaine"],           req:"herbe" },
+  champs:  { nom:"Des champs",     ic:"🌾", prix:4,  bio:["plaine"],           req:"herbe" },
+  lac:     { nom:"Un lac",         ic:"💧", prix:5,  bio:["plaine","toundra"], req:"eau" },
+  palmier: { nom:"Des palmiers",   ic:"🌴", prix:3,  bio:["plage"],            req:"eau" },
+  bateau:  { nom:"Un bateau",      ic:"⛵", prix:9,  bio:["ocean"],            req:"eau" },
+  phare:   { nom:"Un phare",       ic:"🗼", prix:10, bio:["plage"],            req:"eau" },
+  village: { nom:"Un village",     ic:"🏘", prix:12, bio:["plaine","plage"],   req:"herbe" },
+  rocher:  { nom:"Un pic rocheux", ic:"🪨", prix:4,  bio:["montagne","desert","plaine","neige"], req:"relief" },
+  sapins:  { nom:"Des sapins",     ic:"🌲", prix:5,  bio:["toundra","montagne"], req:"relief" },
+  volcan:  { nom:"Un volcan",      ic:"🌋", prix:20, bio:["montagne","neige"], req:"relief" },
+  cactus:  { nom:"Des cactus",     ic:"🌵", prix:3,  bio:["desert"],           req:"climat" },
+  igloo:   { nom:"Un igloo",       ic:"🧊", prix:8,  bio:["banquise","toundra"], req:"climat" }
+};
+var ORDRE_OBJ = ["arbre","foret","champs","lac","palmier","bateau","phare","village",
+                 "rocher","sapins","volcan","cactus","igloo"];
+var NOM_BIOME = { ocean:"océan", banquise:"banquise", plage:"plage", plaine:"plaine",
+  desert:"désert", toundra:"toundra", montagne:"montagne", neige:"neige" };
+/* l'article va avec le mot : « sur le désert », « sur la plaine », « sur l'océan » */
+var ART = { ocean:"l'océan", banquise:"la banquise", plage:"la plage", plaine:"la plaine",
+  desert:"le désert", toundra:"la toundra", montagne:"la montagne", neige:"la neige" };
+
+/* ═══════════════ l'économie ═══════════════
+   Un objet occupe une case entière : si l'on affine la grille, il en faut
+   quatre fois plus pour couvrir la même étendue. Son prix suit donc l'aire
+   d'une case, et meubler un bout de planète coûte le même effort quelle que
+   soit la finesse. Les transformations, elles, changent la planète entière et
+   ne dépendent de rien. Les décors se posent librement, pas par case : leur
+   prix ne bouge pas non plus. */
+function prixObj(k){
+  var o = OBJETS[k]; if(!o) return 0;
+  return Math.max(1, Math.round(o.prix * ECHC * ECHC));
+}
+function seances(){
+  var l = [];
+  try{ l = JSON.parse(localStorage.getItem(K_LOG) || "[]"); }catch(e){}
+  return l.filter(function(x){ return x.code === CODE_LOG; });
+}
+function gagne(){
+  var g = gainsDe(seances());
+  if(M.gag && M.gag > g.cri) g.cri = M.gag;
+  if(BAC){ g.cri += 99999; g.gra += 999; }
+  g.n = g.jours;                     /* « passages » = jours de venue */
+  g.r = g.records;
+  return g;
+}
+function depense(){
+  var d = 0;
+  TERRA.forEach(function(t){ if(M.glob[t.id]) d += t.prix; });
+  for(var i in M.cells) d += prixObj(M.cells[i]);
+  for(var j in M.decors){
+    (M.decors[j] || []).forEach(function(q){ var e = DECORS[q.k]; if(e) d += e.prix; });
+  }
+  /* les créatures se paient en éclats, pas en cristaux : elles sont comptées à
+     part, dans depenseGra */
+  d += depenseBetes();
+  return d;
+}
+function solde(){ return gagne().cri - depense(); }
+
+/* ═══════════════ la scène ═══════════════ */
+var renderer, scene, camera, monde, soleil, ciel = null, halo = null;
+var nuages = null, lune = null, anneau = null, contour = null, etoiles = null;
+var ambiant = null, hemi = null;
+var cam = { th: .7, ph: 1.25, r: 38, cible: new THREE.Vector3(0, 0, 0) };
+var objets = {};                    /* index de cellule -> Group */
+
+function C(h){ return new THREE.Color(h).convertSRGBToLinear(); }
+function mm(col, rough){ return new THREE.MeshStandardMaterial({ color:C(col), flatShading:true,
+  roughness: rough === undefined ? .9 : rough, metalness:0 }); }
+function bt(w, h, d, m){ return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); }
+function cy(a, b, h, m, n){ return new THREE.Mesh(new THREE.CylinderGeometry(a, b, h, n || 7), m); }
+function cn(r, h, m, n){ return new THREE.Mesh(new THREE.ConeGeometry(r, h, n || 7), m); }
+function sp(r, m, n){ return new THREE.Mesh(new THREE.SphereGeometry(r, n || 9, (n || 9) - 3), m); }
+
+var MAT = {};
+function initMat(){
+  MAT.tronc = mm(0x6B4B33); MAT.feuille = mm(0x3F8046); MAT.sapin = mm(0x2E5E44);
+  MAT.roche = mm(0x7A736A); MAT.neige = mm(0xEDF1F4, .8); MAT.eau = mm(0x3C86C4, .45);
+  MAT.mur = mm(0xD9CBB2); MAT.toit = mm(0xA85742); MAT.blanc = mm(0xF2F3F6, .8);
+  MAT.rouge = mm(0xC44A3E); MAT.sable = mm(0xD8C79B); MAT.cactus = mm(0x4C8C5A);
+  MAT.ble = mm(0xD2B45C); MAT.lave = new THREE.MeshBasicMaterial({ color:C(0xFF7A3C) });
+  MAT.voile = mm(0xF4F5F8, .8); MAT.coque = mm(0x8A5A3B);
+  /* pour les décors du sol */
+  MAT.petale = mm(0xE8C15A); MAT.petale2 = mm(0xD9738F);
+  MAT.pierre2 = mm(0x8C8579); MAT.tissu = mm(0xC96F52);
+  MAT.bouleau = mm(0xE2E0D6); MAT.mousse = mm(0x5C7F42);
+  MAT.chapeau = mm(0xC2604B); MAT.paille = mm(0xCBAE63);
+  MAT.feuille2 = mm(0x4E8C50); MAT.feuille3 = mm(0x8FB05A);
+}
+function arbre(h){
+  var g = new THREE.Group();
+  var t = cy(.05, .07, h * .45, MAT.tronc, 6); t.position.y = h * .22; g.add(t);
+  var f = cn(.20, h * .62, MAT.feuille, 7); f.position.y = h * .70; g.add(f);
+  var f2 = cn(.15, h * .42, MAT.feuille, 7); f2.position.y = h * .96; g.add(f2);
+  return g;
+}
+var FAIRE = {
+  arbre: function(){ return arbre(.62); },
+  foret: function(){
+    var g = new THREE.Group();
+    [[0,0,.66],[.24,.14,.5],[-.22,.10,.54],[.06,-.24,.46],[-.14,-.18,.44]].forEach(function(p){
+      var a = arbre(p[2]); a.position.set(p[0], 0, p[1]); g.add(a);
+    });
+    return g;
+  },
+  sapins: function(){
+    var g = new THREE.Group();
+    [[0,0,.70],[.22,.16,.52],[-.20,-.12,.56]].forEach(function(p){
+      var t = cy(.04, .05, p[2]*.3, MAT.tronc, 6); t.position.set(p[0], p[2]*.15, p[1]); g.add(t);
+      for(var k = 0; k < 3; k++){
+        var c = cn(.17 - k*.04, p[2]*.34, MAT.sapin, 7);
+        c.position.set(p[0], p[2]*(.34 + k*.21), p[1]); g.add(c);
+      }
+    });
+    return g;
+  },
+  palmier: function(){
+    var g = new THREE.Group();
+    [[0,0],[.22,.16]].forEach(function(p){
+      var t = cy(.035, .05, .6, MAT.tronc, 6);
+      t.position.set(p[0], .3, p[1]); t.rotation.z = .16; g.add(t);
+      for(var k = 0; k < 5; k++){
+        var f = cn(.06, .32, MAT.feuille, 5);
+        f.position.set(p[0] + Math.cos(k*1.26)*.14, .62, p[1] + Math.sin(k*1.26)*.14);
+        f.rotation.z = Math.cos(k*1.26) * .9; f.rotation.x = -Math.sin(k*1.26) * .9;
+        g.add(f);
+      }
+    });
+    return g;
+  },
+  cactus: function(){
+    var g = new THREE.Group();
+    var t = cy(.09, .10, .52, MAT.cactus, 7); t.position.y = .26; g.add(t);
+    var b = cy(.05, .05, .22, MAT.cactus, 6);
+    b.position.set(.13, .34, 0); b.rotation.z = -1.1; g.add(b);
+    var b2 = cy(.05, .05, .2, MAT.cactus, 6);
+    b2.position.set(.14, .44, 0); g.add(b2);
+    var p = cy(.07, .08, .3, MAT.cactus, 7); p.position.set(-.2, .15, .1); g.add(p);
+    return g;
+  },
+  rocher: function(){
+    var g = new THREE.Group();
+    [[0,0,.30],[.2,.14,.17],[-.18,-.12,.13]].forEach(function(p){
+      var r = new THREE.Mesh(new THREE.DodecahedronGeometry(p[2], 0), MAT.roche);
+      r.position.set(p[0], p[2]*.8, p[1]); r.rotation.set(p[0]*4, p[1]*5, .4); g.add(r);
+    });
+    return g;
+  },
+  lac: function(){
+    var g = new THREE.Group();
+    var d = new THREE.Mesh(new THREE.CircleGeometry(.42, 12), MAT.eau);
+    d.rotation.x = -Math.PI/2; d.position.y = .03; g.add(d);
+    var b = new THREE.Mesh(new THREE.TorusGeometry(.42, .05, 5, 14), MAT.sable);
+    b.rotation.x = Math.PI/2; g.add(b);
+    return g;
+  },
+  champs: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 4; k++){
+      var b = bt(.62, .06, .12, k % 2 ? MAT.ble : MAT.feuille);
+      b.position.set(0, .03, -.21 + k*.14); g.add(b);
+    }
+    return g;
+  },
+  village: function(){
+    var g = new THREE.Group();
+    [[0,0,.9],[.26,.2,.7],[-.24,.16,.75],[.04,-.26,.65]].forEach(function(p){
+      var m = bt(.24*p[2], .22*p[2], .24*p[2], MAT.mur);
+      m.position.set(p[0], .11*p[2], p[1]); g.add(m);
+      var t = cn(.21*p[2], .18*p[2], MAT.toit, 4);
+      t.position.set(p[0], .30*p[2], p[1]); t.rotation.y = .78; g.add(t);
+    });
+    return g;
+  },
+  phare: function(){
+    var g = new THREE.Group();
+    var b = cy(.11, .15, .62, MAT.blanc, 9); b.position.y = .31; g.add(b);
+    var r = cy(.115, .125, .12, MAT.rouge, 9); r.position.y = .40; g.add(r);
+    var t = cy(.09, .09, .1, MAT.roche, 9); t.position.y = .67; g.add(t);
+    var l = sp(.06, MAT.lave, 8); l.position.y = .76; g.add(l);
+    return g;
+  },
+  igloo: function(){
+    var g = new THREE.Group();
+    var d = new THREE.Mesh(new THREE.SphereGeometry(.3, 12, 7, 0, 6.2832, 0, Math.PI/2), MAT.blanc);
+    g.add(d);
+    var e = new THREE.Mesh(new THREE.CylinderGeometry(.11, .11, .22, 8, 1, false, 0, Math.PI), MAT.blanc);
+    e.rotation.z = Math.PI/2; e.rotation.y = Math.PI/2; e.position.set(0, .09, .28); g.add(e);
+    return g;
+  },
+  bateau: function(){
+    var g = new THREE.Group();
+    var c = bt(.42, .1, .18, MAT.coque); c.position.y = .06; g.add(c);
+    var m = cy(.02, .02, .42, MAT.tronc, 5); m.position.y = .3; g.add(m);
+    var v = new THREE.Mesh(new THREE.PlaneGeometry(.26, .3), MAT.voile);
+    v.material.side = THREE.DoubleSide; v.position.set(.06, .32, 0); v.rotation.y = Math.PI/2;
+    g.add(v);
+    return g;
+  },
+  volcan: function(){
+    var g = new THREE.Group();
+    var c = cn(.42, .68, MAT.roche, 9); c.position.y = .34; g.add(c);
+    var b = cy(.14, .16, .1, MAT.lave, 9); b.position.y = .66; g.add(b);
+    var f = sp(.2, new THREE.MeshBasicMaterial({ color:C(0xFF7A3C), transparent:true,
+      opacity:.16, blending:THREE.AdditiveBlending, depthWrite:false }), 10);
+    f.position.y = .72; g.add(f);
+    return g;
+  }
+};
+
+/* ═══════════════ construction de la scène ═══════════════ */
+function construire(){
+  renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:"high-performance" });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  /* Le rendu physique produit des hautes lumières qui dépassent l'écran ; les
+     écrêter brutalement donne des aplats blancs. La courbe ACES les ramène en
+     douceur — c'est le réglage qui, à lui seul, fait le plus pour l'image. */
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  $("scene").appendChild(renderer.domElement);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(42, 16/9, .5, 500);
+
+  ambiant = new THREE.AmbientLight(C(0x8C92C0), .22); scene.add(ambiant);
+  /* une lumière de ciel plutôt qu'une lumière plate : bleu par-dessus, rappel
+     chaud du sol par-dessous. C'est ce qui donne du volume aux faces à l'ombre. */
+  hemi = new THREE.HemisphereLight(C(0x9FC4F0), C(0x6B5B42), .55); scene.add(hemi);
+  soleil = new THREE.DirectionalLight(C(0xFFF4E2), 1.05);
+  soleil.position.set(1, .62, .8); scene.add(soleil);
+  var app = new THREE.DirectionalLight(C(0x7FA8FF), .3);
+  app.position.set(-.9, -.3, -.7); scene.add(app);
+
+  /* le fond étoilé */
+  var pts = [], n = 700;
+  for(var i = 0; i < n; i++){
+    var a = Math.random()*6.2832, b = Math.acos(2*Math.random() - 1), r = 120 + Math.random()*90;
+    pts.push(Math.sin(b)*Math.cos(a)*r, Math.cos(b)*r, Math.sin(b)*Math.sin(a)*r);
+  }
+  var gg = new THREE.BufferGeometry();
+  gg.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  etoiles = new THREE.Points(gg, new THREE.PointsMaterial({ color:C(0xE6ECFF), size:.55,
+    transparent:true, opacity:.75, fog:false }));
+  scene.add(etoiles);
+
+  monde = new THREE.Group(); scene.add(monde);
+  preparerMonde();
+  preparerCiel();
+  construireGlobe(M.glob);
+  contour = new THREE.LineLoop(new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color:C(0xFFFFFF), transparent:true, opacity:.85 }));
+  contour.visible = false; monde.add(contour);
+  majDecor();
+  Object.keys(M.cells).forEach(function(i){ poser(parseInt(i, 10), M.cells[i], true); });
+  poserDecors(); poserBetes();
+  redim();
+  window.addEventListener("resize", redim);
+}
+
+/* halo, nuages, lune, anneau : ce qui s'ajoute avec les transformations */
+function majDecor(){
+  var o = M.glob;
+  if(halo){ monde.remove(halo); halo = null; }
+  if(o.atmos){
+    halo = new THREE.Mesh(new THREE.SphereGeometry(R0 * 1.09, 32, 22),
+      new THREE.MeshBasicMaterial({ color:C(0x7FB8FF), transparent:true, opacity:.14,
+        side:THREE.BackSide, depthWrite:false, blending:THREE.AdditiveBlending }));
+    monde.add(halo);
+  }
+  if(nuages){ monde.remove(nuages); nuages = null; }
+  if(o.nuages){
+    nuages = new THREE.Group();
+    var mc = new THREE.MeshStandardMaterial({ color:C(0xF4F7FB), roughness:1, flatShading:true,
+      transparent:true, opacity:.82 });
+    for(var i = 0; i < 16; i++){
+      var a = (i/16)*6.2832 + Math.sin(i*3.1)*.6, b = Math.acos(2*((i*.618) % 1) - 1);
+      var r = R0 * 1.30, g = new THREE.Group();
+      for(var k = 0; k < 3; k++){
+        var s = sp(.38 + (k % 2) * .2, mc, 7);
+        s.position.set(k*.75 - .75, 0, ((k*7) % 3) * .22 - .22);
+        s.scale.set(1, .5, .8); g.add(s);
+      }
+      g.position.set(Math.sin(b)*Math.cos(a)*r, Math.cos(b)*r, Math.sin(b)*Math.sin(a)*r);
+      g.lookAt(0, 0, 0); g.rotateX(Math.PI/2);
+      nuages.add(g);
+    }
+    monde.add(nuages);
+  }
+  if(lune){ scene.remove(lune); lune = null; }
+  if(o.lune){
+    lune = new THREE.Group();
+    var b = sp(1.5, mm(0xC9C6BC), 14); lune.add(b);
+    [[.6,.5,.35],[-.7,-.3,.28],[.2,-.8,.22]].forEach(function(p){
+      var cr = new THREE.Mesh(new THREE.CircleGeometry(p[2], 9), mm(0xAFABA1));
+      var v = new THREE.Vector3(p[0], p[1], Math.sqrt(Math.max(.01, 1-p[0]*p[0]-p[1]*p[1])));
+      cr.position.copy(v.clone().multiplyScalar(1.51));
+      cr.lookAt(v.clone().multiplyScalar(4)); lune.add(cr);
+    });
+    scene.add(lune);
+  }
+  if(anneau){ monde.remove(anneau); anneau = null; }
+  if(o.anneau){
+    anneau = new THREE.Group();
+    [[14.5, 16.4, .28], [16.9, 18.6, .18], [19.1, 20.2, .11]].forEach(function(q){
+      var r = new THREE.Mesh(new THREE.RingGeometry(q[0], q[1], 72),
+        new THREE.MeshBasicMaterial({ color:C(0xD8CBAE), transparent:true, opacity:q[2],
+          side:THREE.DoubleSide, depthWrite:false }));
+      r.rotation.x = Math.PI/2; anneau.add(r);
+    });
+    anneau.rotation.z = .34; monde.add(anneau);
+  }
+}
+
+/* ═══════════════ poser et retirer ═══════════════ */
+function poser(i, id, muet){
+  if(objets[i]){ monde.remove(objets[i]); delete objets[i]; }
+  var g = FAIRE[id]();
+  /* un objet tient dans sa case : si on affine la grille, il rétrécit avec */
+  g.scale.setScalar(.95 * ECHC);
+  g.userData = { cell:i, type:"obj" };
+  placerObjet(i, g);
+  monde.add(g); objets[i] = g;
+  if(!muet){ M.cells[i] = id; sauver(); }
+}
+function retirer(i){
+  if(objets[i]){ monde.remove(objets[i]); delete objets[i]; }
+  delete M.cells[i]; delete M.pos[i];
+  sauver(); majSolde(); remplirListe();
+}
+/* après une transformation, l'altitude des cases change : tout ce qui est posé
+   doit redescendre ou remonter avec son sol */
+function replacerObjets(){
+  Object.keys(objets).forEach(function(i){ placerObjet(parseInt(i, 10), objets[i]); });
+  poserDecors();
+}
+
+/* ═══════════════ bruit de valeur, en trois dimensions ═══════════════ */
+function gr(i, j, k){
+  var n = (i|0)*374761393 + (j|0)*668265263 + (k|0)*1442695041 + GRAINE*2654435761;
+  n = (n ^ (n >>> 13)) * 1274126177;
+  n = n ^ (n >>> 16);
+  return ((n >>> 0) / 2147483647.5) - 1;
+}
+function bruit(x, y, z){
+  var i = Math.floor(x), j = Math.floor(y), k = Math.floor(z);
+  var fx = x-i, fy = y-j, fz = z-k;
+  var ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy), uz = fz*fz*(3-2*fz);
+  function h(a, b, c){ return gr(i+a, j+b, k+c); }
+  var a0 = h(0,0,0) + (h(1,0,0)-h(0,0,0))*ux, a1 = h(0,1,0) + (h(1,1,0)-h(0,1,0))*ux;
+  var b0 = h(0,0,1) + (h(1,0,1)-h(0,0,1))*ux, b1 = h(0,1,1) + (h(1,1,1)-h(0,1,1))*ux;
+  return (a0 + (a1-a0)*uy) + ((b0 + (b1-b0)*uy) - (a0 + (a1-a0)*uy))*uz;
+}
+function fbm(x, y, z, oct, f0){
+  var s = 0, a = 1, f = f0 || 1, t = 0;
+  for(var i = 0; i < oct; i++){
+    s += a * bruit(x*f, y*f, z*f); t += a; a *= .5; f *= 2.05;
+  }
+  return s / t;
+}
+
+/* ═══════════════ l'icosphère et son pavage dual ═══════════════ */
+function normaliser(p){
+  var l = Math.sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+  return [p[0]/l, p[1]/l, p[2]/l];
+}
+function icosaedre(){
+  var t = (1 + Math.sqrt(5)) / 2;
+  var v = [[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],
+           [0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]].map(normaliser);
+  var f = [[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],
+           [10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],
+           [2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+  return { v:v, f:f };
+}
+function subdiviser(g){
+  var v = g.v.slice(), f = [], cache = {};
+  function milieu(a, b){
+    var k = a < b ? a + "_" + b : b + "_" + a;
+    if(cache[k] !== undefined) return cache[k];
+    var p = normaliser([(v[a][0]+v[b][0])/2, (v[a][1]+v[b][1])/2, (v[a][2]+v[b][2])/2]);
+    v.push(p); cache[k] = v.length - 1; return cache[k];
+  }
+  g.f.forEach(function(t){
+    var a = milieu(t[0], t[1]), b = milieu(t[1], t[2]), c = milieu(t[2], t[0]);
+    f.push([t[0],a,c], [t[1],b,a], [t[2],c,b], [a,b,c]);
+  });
+  return { v:v, f:f };
+}
+
+/* Le dual : chaque sommet devient une cellule, dont les coins sont les centres
+   des faces qui l'entourent, rangés dans le sens trigonométrique autour de lui. */
+var ADJ = null;
+function construireGrille(niveau){
+  var g = icosaedre();
+  for(var s = 0; s < niveau; s++) g = subdiviser(g);
+  var V = g.v, F = g.f;
+  /* L'adjacence se lit directement dans la triangulation : deux cases se
+     touchent si leurs sommets sont reliés par une arête. C'est exact et
+     instantané, là où comparer les distances deux à deux coûtait le carré du
+     nombre de cases — impraticable dès qu'on l'augmente. */
+  ADJ = [];
+  for(var n0 = 0; n0 < V.length; n0++) ADJ.push([]);
+  F.forEach(function(t){
+    [[t[0],t[1]],[t[1],t[2]],[t[2],t[0]]].forEach(function(e){
+      if(ADJ[e[0]].indexOf(e[1]) < 0) ADJ[e[0]].push(e[1]);
+      if(ADJ[e[1]].indexOf(e[0]) < 0) ADJ[e[1]].push(e[0]);
+    });
+  });
+  var autour = [];
+  for(var i = 0; i < V.length; i++) autour.push([]);
+  var C = [];
+  F.forEach(function(t, k){
+    C.push(normaliser([(V[t[0]][0]+V[t[1]][0]+V[t[2]][0])/3,
+                       (V[t[0]][1]+V[t[1]][1]+V[t[2]][1])/3,
+                       (V[t[0]][2]+V[t[1]][2]+V[t[2]][2])/3]));
+    t.forEach(function(iv){ autour[iv].push(k); });
+  });
+  var cells = [];
+  for(var n = 0; n < V.length; n++){
+    var p = V[n], fs = autour[n];
+    /* base tangente pour ranger les coins par angle */
+    var ref = Math.abs(p[1]) < .9 ? [0,1,0] : [1,0,0];
+    var u = normaliser([p[1]*ref[2]-p[2]*ref[1], p[2]*ref[0]-p[0]*ref[2], p[0]*ref[1]-p[1]*ref[0]]);
+    var w = [p[1]*u[2]-p[2]*u[1], p[2]*u[0]-p[0]*u[2], p[0]*u[1]-p[1]*u[0]];
+    fs.sort(function(a, b){
+      var ca = C[a], cb = C[b];
+      var aa = Math.atan2(ca[0]*w[0]+ca[1]*w[1]+ca[2]*w[2], ca[0]*u[0]+ca[1]*u[1]+ca[2]*u[2]);
+      var ab = Math.atan2(cb[0]*w[0]+cb[1]*w[1]+cb[2]*w[2], cb[0]*u[0]+cb[1]*u[1]+cb[2]*u[2]);
+      return aa - ab;
+    });
+    cells.push({ c:p, coins:fs.map(function(k){ return C[k]; }) });
+  }
+  return cells;
+}
+
+/* ═══════════════ altitude, latitude, biome ═══════════════ */
+var MER = -.02;                      /* niveau de la mer dans l'échelle du bruit */
+function altitude(p){
+  /* Deux échelles seulement, et une basse fréquence dominante : c'est ce qui
+     donne de vrais continents plutôt qu'un semis d'îles. Le détail ne sert
+     qu'à découper les côtes et à creuser les vallées. */
+  var cont = fbm(p[0]*.95 + 4.2, p[1]*.95, p[2]*.95, 2, 1);
+  var det  = fbm(p[0]*3.2 - 2.7, p[1]*3.2, p[2]*3.2, 4, 1);
+  return cont * 1.02 + det * .19;
+}
+function biome(h, lat, hum){
+  var froid = Math.abs(lat);
+  if(h < MER) return (froid > .80) ? "banquise" : "ocean";
+  if(h < MER + .045) return (froid > .76) ? "banquise" : "plage";
+  if(froid > .76) return "toundra";
+  /* seuils hauts : la montagne doit rester une chaîne, pas le paysage par défaut */
+  if(h > .72) return "neige";
+  if(h > .47) return "montagne";
+  if(hum < -.20 && froid > .12 && froid < .46) return "desert";
+  return "plaine";
+}
+
+/* ═══════════════ le maillage ═══════════════
+   Chaque cellule est un prisme : une face du dessus à son altitude, et des
+   parois verticales qui descendent au niveau voisin. Ce sont les parois qui
+   font lire la planète comme un pavage plutôt que comme une boule bruitée. */
+var R0 = 10, HMAX = 1.7;
+var CELLS = null, INFO = null, planete = null, matSol = null;
+
+/* Palette volontairement peu saturée et peu contrastée : ce qui fait qu'un
+   monde en tuiles paraît peint plutôt que colorié, ce sont des teintes proches
+   les unes des autres, et des transitions — pas des aplats francs. */
+var NU = 0x93836B;
+function teinte(b, o){
+  /* o : ce qui est débloqué. Avant l'eau, l'océan est un bassin de roche nue ;
+     avant l'herbe, la plaine est terreuse ; avant le climat, tout est tempéré. */
+  if(b === "ocean")    return o.eau ? (o.atmos ? 0x2F7BAC : 0x2A6A93) : 0x5F5A51;
+  if(b === "banquise") return o.climat ? 0xD2DFE8 : (o.eau ? 0x2F7BAC : 0x5F5A51);
+  if(b === "plage")    return o.eau ? 0xE0CFA6 : 0x746F67;
+  if(b === "plaine")   return o.herbe ? 0x7FA05C : NU;
+  if(b === "desert")   return o.climat ? 0xDCC087 : (o.herbe ? 0x7FA05C : NU);
+  if(b === "toundra")  return o.climat ? 0x9BA684 : (o.herbe ? 0x7FA05C : NU);
+  if(b === "montagne") return o.relief ? 0x8B8278 : (o.herbe ? 0x7FA05C : NU);
+  if(b === "neige")    return o.relief ? 0xE6ECEF : (o.herbe ? 0x7FA05C : NU);
+  return NU;
+}
+
+/* ═══════════════ les coins partagés ═══════════════
+   Chaque coin d'une case appartient à trois cases. Si les trois y posent la
+   même couleur — la moyenne des leurs — alors le pourtour de chaque tuile se
+   fond dans ses voisines au lieu de s'arrêter net. C'est ce dégradé, et lui
+   seul, qui distingue un monde peint d'un monde colorié case par case. */
+var COINS3 = null;
+function cleCoin(q){
+  return q[0].toFixed(4) + "|" + q[1].toFixed(4) + "|" + q[2].toFixed(4);
+}
+function calculerCoins(){
+  var m = {}, i, k;
+  for(i = 0; i < CELLS.length; i++)
+    for(k = 0; k < CELLS[i].coins.length; k++){
+      var c = cleCoin(CELLS[i].coins[k]);
+      (m[c] = m[c] || []).push(i);
+    }
+  COINS3 = [];
+  for(i = 0; i < CELLS.length; i++){
+    var t = [];
+    for(k = 0; k < CELLS[i].coins.length; k++) t.push(m[cleCoin(CELLS[i].coins[k])] || [i]);
+    COINS3.push(t);
+  }
+}
+var COULEURS = null, couleursSales = true;
+function prepCouleurs(o){
+  if(!COINS3) calculerCoins();
+  if(COULEURS && !couleursSales) return;
+  couleursSales = false;
+  COULEURS = [];
+  for(var i = 0; i < CELLS.length; i++){
+    var c = CELLS[i].c;
+    var col = new THREE.Color(teinte(bioDe(i), o)).convertSRGBToLinear();
+    /* une dérive très lente d'une case à l'autre : deux plaines voisines ne
+       sont jamais exactement de la même couleur */
+    var v = fbm(c[0]*1.7 + 11.3, c[1]*1.7, c[2]*1.7, 2, 1) * .055;
+    col.r = Math.max(0, Math.min(1, col.r * (1 + v)));
+    col.g = Math.max(0, Math.min(1, col.g * (1 + v)));
+    col.b = Math.max(0, Math.min(1, col.b * (1 + v*.6)));
+    COULEURS.push(col);
+  }
+}
+function coinCouleur(i, k){
+  var l = COINS3[i][k], r = 0, g = 0, b = 0;
+  for(var n = 0; n < l.length; n++){ var c = COULEURS[l[n]]; r += c.r; g += c.g; b += c.b; }
+  return [r/l.length, g/l.length, b/l.length];
+}
+/* L'épaule : le pourtour de chaque tuile redescend un peu, ce qui arrondit
+   l'arête. Deux cases de même altitude se rejoignent alors en une rainure
+   douce au lieu de deux blocs collés. */
+var NIV = 3, ECHC = 1, RANGS = 3;
+var EPAULE = .085, EPBORD = .18;
+function epaule(a0){ return a0 >= EPBORD ? 0 : (1 - a0/EPBORD) * EPAULE; }
+/* Combien de la couleur des voisines à un point donné. Le centre d'une tuile
+   reste franc, et tout le fondu se joue dans son tiers extérieur : plus tôt et
+   la carte devient une bouillie, plus tard et les cases redeviennent des
+   pastilles posées côte à côte. */
+function melange(a0){ return Math.pow(Math.max(0, 1 - a0/.62), 1.7); }
+var FOND = 2.4;                      /* profondeur des parois sous R0 */
+/* ═══════════════ ce que le patient a retouché ═══════════════
+   La géologie donne un monde ; M.terre garde les endroits où le patient n'était
+   pas d'accord avec elle. Un seul point de lecture — bioDe et hauteurCell — et
+   tout le reste (couleur, relief, pose, diorama) suit sans le savoir. */
+var PAS = .42;                       /* un cran d'élévation, en unités de scène */
+function bioDe(i){
+  var t = M.terre && M.terre[i];
+  return (t && t.b) || INFO[i].b;
+}
+function cranDe(i){
+  var t = M.terre && M.terre[i];
+  return (t && t.h) || 0;
+}
+function hauteurCell(i, o){
+  var b = bioDe(i), cr = cranDe(i) * PAS;
+  if(b === "ocean") return -.22 + cr;
+  /* on borne à .62 : sans cela, un sommet de bruit isolé perce la couche de
+     nuages et la planète perd son échelle. Avant l'achat du relief, tout est
+     presque plat — c'est ce qui rend le soulèvement spectaculaire. */
+  var h = Math.min(.62, Math.max(0, INFO[i].h - MER)) / .62;
+  return h * (o.relief ? HMAX * 1.45 : HMAX * .22) + cr;
+}
+
+/* Chaque tuile : un centre, un anneau intermédiaire à pleine hauteur, un
+   pourtour légèrement abaissé — l'épaule — puis la paroi. Le centre porte la
+   couleur de la case, le pourtour la moyenne des cases qui s'y touchent. */
+function construireGlobe(o){
+  if(planete){ monde.remove(planete); planete.geometry.dispose(); }
+  prepCouleurs(o);
+  var pos = [], col = [], idx = [], nor = [];
+  var f = R0 - FOND;
+  for(var i = 0; i < CELLS.length; i++){
+    var cel = CELLS[i], n = cel.coins.length;
+    var e = R0 + hauteurCell(i, o), e2 = e - EPAULE;
+    var up = cel.c, self = COULEURS[i];
+    var base = pos.length / 3;
+    pos.push(up[0]*e, up[1]*e, up[2]*e);
+    nor.push(up[0], up[1], up[2]);
+    col.push(self.r, self.g, self.b);
+    var cc = [];
+    for(var kc = 0; kc < n; kc++) cc.push(coinCouleur(i, kc));
+    /* trois anneaux plutôt qu'un : le fondu vers les voisines a besoin d'un peu
+       de place pour être doux sans envahir le centre de la tuile */
+    var ANN = [.45, EPBORD, 0];
+    for(var r = 0; r < 3; r++){
+      var a0 = ANN[r], m = melange(a0);
+      for(var k = 0; k < n; k++){
+        var q = cel.coins[k];
+        var mx = up[0]*a0 + q[0]*(1-a0), my = up[1]*a0 + q[1]*(1-a0),
+            mz = up[2]*a0 + q[2]*(1-a0);
+        var ml = Math.sqrt(mx*mx + my*my + mz*mz);
+        var ee = (r === 2) ? e2 : e;
+        pos.push(mx/ml*ee, my/ml*ee, mz/ml*ee);
+        if(r === 2){
+          /* la normale de l'épaule penche un peu vers l'extérieur : assez pour
+             arrondir l'arête, pas assez pour en faire un liseré */
+          var ox = q[0]-up[0], oy = q[1]-up[1], oz = q[2]-up[2];
+          var ol = Math.sqrt(ox*ox + oy*oy + oz*oz) || 1;
+          var nx2 = up[0] + ox/ol*.42, ny2 = up[1] + oy/ol*.42, nz2 = up[2] + oz/ol*.42;
+          var nl2 = Math.sqrt(nx2*nx2 + ny2*ny2 + nz2*nz2);
+          nor.push(nx2/nl2, ny2/nl2, nz2/nl2);
+        } else nor.push(up[0], up[1], up[2]);
+        col.push(self.r + (cc[k][0]-self.r)*m, self.g + (cc[k][1]-self.g)*m,
+          self.b + (cc[k][2]-self.b)*m);
+      }
+    }
+    for(var k2 = 0; k2 < n; k2++){
+      var s0 = base+1+k2, s1 = base+1+((k2+1)%n);
+      idx.push(base, s0, s1);
+      for(var r2 = 0; r2 < 2; r2++){
+        var A0 = base+1+r2*n+k2, A1 = base+1+r2*n+((k2+1)%n);
+        var B0 = A0+n, B1 = A1+n;
+        idx.push(A0, B0, B1, A0, B1, A1);
+      }
+    }
+    /* parois : on descend bien plus bas que la case la plus enfoncée possible,
+       sinon une case abaissée par le patient passerait sous le fond et l'on
+       verrait au travers */
+    for(var k3 = 0; k3 < n; k3++){
+      var a = cel.coins[k3], b = cel.coins[(k3 + 1) % n];
+      var bs = pos.length / 3;
+      var nx = a[0] + b[0], ny = a[1] + b[1], nz = a[2] + b[2];
+      var nl = Math.sqrt(nx*nx + ny*ny + nz*nz);
+      var ca = cc[k3], cb2 = cc[(k3 + 1) % n];
+      [[a[0]*e2,a[1]*e2,a[2]*e2],[b[0]*e2,b[1]*e2,b[2]*e2],
+       [b[0]*f,b[1]*f,b[2]*f],[a[0]*f,a[1]*f,a[2]*f]].forEach(function(p, kk){
+        pos.push(p[0], p[1], p[2]);
+        nor.push(nx/nl, ny/nl, nz/nl);
+        /* le pied d'une paroi reçoit moins de lumière que son sommet */
+        var src = (kk === 0 || kk === 3) ? ca : cb2, g2 = (kk < 2) ? .94 : .60;
+        col.push(src[0]*g2, src[1]*g2, src[2]*g2);
+      });
+      /* L'ordre des sommets compte : pris dans l'autre sens, la paroi tourne le
+         dos à l'extérieur, se fait éliminer au rendu, et le décrochement entre
+         deux cases d'altitudes différentes laisse voir l'espace au travers. */
+      idx.push(bs, bs+2, bs+1, bs, bs+3, bs+2);
+    }
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(new THREE.Uint32BufferAttribute(idx, 1));
+  matSol = matSol || new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.95,
+    metalness:0 });
+  planete = new THREE.Mesh(g, matSol);
+  planete.castShadow = false; planete.receiveShadow = false;
+  monde.add(planete);
+  return planete;
+}
+
+/* ═══════════════ préparer la grille une fois pour toutes ═══════════════ */
+function preparerMonde(){
+  NIV = Math.max(3, Math.min(5, M.niv || 3));
+  CELLS = construireGrille(NIV);
+  /* rayon angulaire d'une case : l'aire de la sphère divisée par leur nombre.
+     Tout ce qui se mesure « en cases » — pose, épaule, cran d'élévation,
+     densité d'herbe, finesse du diorama — s'en déduit, si bien qu'on peut
+     changer de finesse sans rien re-régler à la main. */
+  RCELL = R0 * Math.sqrt(4 / CELLS.length);
+  ECHC = RCELL / .789;
+  EPAULE = .085 * ECHC;
+  PAS = .53 * RCELL;
+  /* Le diorama ne couvre qu'une poignée de cases : on peut y viser une taille
+     de triangle fixe, indépendante de la finesse de la grille. C'est là, et non
+     dans le nombre de cases, que se gagne le détail vu de près. */
+  NSUB = Math.max(2, Math.min(10, Math.round(RCELL / .098)));
+  RANGS = Math.max(3, Math.round(3 / ECHC));
+  COINS3 = null; VOISINS = null; couleursSales = true;
+  INFO = CELLS.map(function(cel){
+    var h = altitude(cel.c);
+    var lat = cel.c[1];
+    var hum = fbm(cel.c[0]*2.2 + 9.1, cel.c[1]*2.2, cel.c[2]*2.2, 3, 1);
+    return { h:h, lat:lat, hum:hum, b:biome(h, lat, hum) };
+  });
+}
+
+/* position du dessus d'une cellule, là où se posent les objets */
+function sommetCell(i, o){
+  var cel = CELLS[i], e = R0 + hauteurCell(i, o) + .02;
+  return new THREE.Vector3(cel.c[0]*e, cel.c[1]*e, cel.c[2]*e);
+}
+/* la cellule la plus proche d'un point du globe : 642 comparaisons, c'est
+   instantané et ça évite d'avoir à indexer les triangles */
+function cellDe(v){
+  var p = v.clone().normalize(), best = -1, bd = -2;
+  for(var i = 0; i < CELLS.length; i++){
+    var c = CELLS[i].c, d = p.x*c[0] + p.y*c[1] + p.z*c[2];
+    if(d > bd){ bd = d; best = i; }
+  }
+  return best;
+}
+
+/* ═══════════════ le voisinage ═══════════════
+   Deux cellules sont voisines si elles partagent une arête, donc si leurs
+   centres sont plus proches que la distance typique entre centres. On le
+   calcule une fois : 642 cellules, six voisins chacune. */
+var VOISINS = null;
+function calculerVoisins(){ VOISINS = ADJ; }
+function autourDe(i, rangs){
+  if(!VOISINS) calculerVoisins();
+  var vus = {}, bord = [i], out = [i];
+  vus[i] = 1;
+  for(var r = 0; r < rangs; r++){
+    var suiv = [];
+    bord.forEach(function(c){
+      VOISINS[c].forEach(function(v){
+        if(!vus[v]){ vus[v] = 1; out.push(v); suiv.push(v); }
+      });
+    });
+    bord = suiv;
+  }
+  return out;
+}
+
+/* ═══════════════ le repère local d'une cellule ═══════════════ */
+function repere(i){
+  var c = CELLS[i].c;
+  var up = new THREE.Vector3(c[0], c[1], c[2]);
+  var ref = Math.abs(c[1]) < .92 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  var est = new THREE.Vector3().crossVectors(ref, up).normalize();
+  var nord = new THREE.Vector3().crossVectors(up, est).normalize();
+  return { up:up, est:est, nord:nord };
+}
+/* rayon typique d'une cellule, en unités de scène */
+var RCELL = .789;
+
+/* ═══════════════ le diorama ═══════════════
+   Même structure que le globe — des prismes hexagonaux — mais le dessus de
+   chaque cellule est subdivisé et bruité, et la couleur varie légèrement d'un
+   triangle à l'autre. De près, c'est ce grain-là qui fait la différence, bien
+   plus que le nombre de polygones. */
+var patch = null, patchEau = null, patchCells = null;
+var eauBase = null, eauGeo = null;
+var NSUB = 4;                        /* subdivision du dessus ET des parois */
+
+function bruitFin(x, y, z){ return fbm(x*46, y*46, z*46, 4, 1); }
+
+/* Un point du bord d'une case, entre deux coins. Le dessus subdivisé et la
+   paroi doivent passer par EXACTEMENT les mêmes points : c'est la seule façon
+   qu'ils se rejoignent. Une paroi tendue en ligne droite d'un coin à l'autre
+   passe sous le terrain bruité par endroits — et on voit alors à travers. */
+function bordCell(cel, k, t){
+  var B = cel.coins[k], C = cel.coins[(k + 1) % cel.coins.length];
+  return new THREE.Vector3(B[0] + (C[0]-B[0])*t, B[1] + (C[1]-B[1])*t,
+    B[2] + (C[2]-B[2])*t).normalize();
+}
+
+/* hauteur d'un point du dessus, épaule comprise : le dessus et la paroi
+   doivent l'appeler tous les deux, faute de quoi ils ne se rejoignent pas */
+function hautDessus(p, e, a0, o, plat){
+  /* pas d'épaule sur l'eau : deux cases d'océan voisines doivent se rejoindre
+     sans rainure, sinon on aperçoit la roche entre elles et la mer se lit
+     comme une banquise fendue */
+  return e + hautSol(p, o, plat) - (plat ? 0 : epaule(a0));
+}
+function construirePatch(centre, o){
+  retirerPatch();
+  prepCouleurs(o);
+  patchCells = autourDe(centre, RANGS);
+  var pos = [], col = [], idx = [], N = NSUB;
+  var epos = [], eidx = [];          /* l'eau : sa propre surface, son matériau */
+  var cb = new THREE.Color(), cr = new THREE.Color();
+  var f = R0 - FOND;
+  patchCells.forEach(function(i){
+    var cel = CELLS[i], bio = bioDe(i);
+    var e = R0 + hauteurCell(i, o);
+    var plat = (bio === "ocean");
+    var self = COULEURS[i];
+    var ctr = new THREE.Vector3(cel.c[0], cel.c[1], cel.c[2]);
+    var n = cel.coins.length;
+    var cc = [];
+    for(var kc = 0; kc < n; kc++) cc.push(coinCouleur(i, kc));
+
+    /* Sommets partagés à l'intérieur de la case : les normales s'y moyennent
+       et le terrain devient lisse au lieu d'être une mosaïque de facettes. */
+    var carte = {}, locP = [], locC = [], locI = [];
+    function sommet(k, u, v){
+      var cle = (u === 0 && v === 0) ? "c"
+        : (v === 0) ? ("r" + k + "_" + u)
+        : (u === 0) ? ("r" + ((k+1) % n) + "_" + v)
+        : (k + "_" + u + "_" + v);
+      if(carte[cle] !== undefined) return carte[cle];
+      var a1 = u/N, a2 = v/N, a0 = 1 - a1 - a2;
+      var B = cel.coins[k], Cq = cel.coins[(k+1) % n];
+      var p = new THREE.Vector3(
+        ctr.x*a0 + B[0]*a1 + Cq[0]*a2,
+        ctr.y*a0 + B[1]*a1 + Cq[1]*a2,
+        ctr.z*a0 + B[2]*a1 + Cq[2]*a2).normalize();
+      var hh = hautDessus(p, e, a0, o, plat);
+      var id = locP.length / 3;
+      locP.push(p.x*hh, p.y*hh, p.z*hh);
+      /* la couleur du pourtour est celle des coins, partagée avec les voisines :
+         les deux côtés d'une arête tombent donc sur exactement la même teinte */
+      var s = a1 + a2, t = s > 1e-6 ? a2/s : 0;
+      var rr = cc[k][0] + (cc[(k+1)%n][0] - cc[k][0])*t;
+      var gg = cc[k][1] + (cc[(k+1)%n][1] - cc[k][1])*t;
+      var bb = cc[k][2] + (cc[(k+1)%n][2] - cc[k][2])*t;
+      var m = melange(a0);
+      locC.push(self.r + (rr-self.r)*m, self.g + (gg-self.g)*m, self.b + (bb-self.b)*m);
+      carte[cle] = id;
+      return id;
+    }
+    for(var k = 0; k < n; k++){
+      for(var u = 0; u < N; u++){
+        for(var v = 0; v < N - u; v++){
+          locI.push(sommet(k,u,v), sommet(k,u+1,v), sommet(k,u,v+1));
+          if(v + u < N - 1) locI.push(sommet(k,u+1,v), sommet(k,u+1,v+1), sommet(k,u,v+1));
+        }
+      }
+    }
+    if(plat){
+      var be = epos.length / 3;
+      for(var z = 0; z < locP.length; z++) epos.push(locP[z]);
+      for(var z2 = 0; z2 < locI.length; z2++) eidx.push(be + locI[z2]);
+    } else {
+      var b0 = pos.length / 3;
+      for(var z3 = 0; z3 < locP.length; z3++) pos.push(locP[z3]);
+      for(var z4 = 0; z4 < locC.length; z4++) col.push(locC[z4]);
+      for(var z5 = 0; z5 < locI.length; z5++) idx.push(b0 + locI[z5]);
+    }
+
+    /* Les parois. Sous l'eau ce n'est pas de l'eau mais de la roche : une case
+       d'océan est un bassin, pas un cube bleu. Elles sont poussées d'un cheveu
+       vers l'extérieur pour passer devant celles du globe qu'elles recouvrent —
+       sans cela les deux se disputent le même plan. */
+    cb.set(plat ? 0x60594F : teinte(bio, o)).convertSRGBToLinear();
+    /* Une paroi est un plan qui passe par le centre de la planète : la grandir
+       d'un facteur la fait glisser dans son propre plan sans jamais la décoller
+       de celle du globe qu'elle recouvre — d'où le moiré. Il faut la pousser
+       perpendiculairement, vers l'extérieur de sa case. */
+    var EPS = .011;
+    for(var k3 = 0; k3 < n; k3++){
+      var prev = null, dh = null;
+      for(var s2 = 0; s2 <= N; s2++){
+        var q2 = bordCell(cel, k3, s2 / N);
+        /* sous l'eau la paroi s'arrête un peu plus bas : poussée vers
+           l'extérieur, elle dépasserait sinon chez la case voisine et
+           dessinerait un liseré sombre au milieu de la mer */
+        var haut = q2.clone().multiplyScalar(hautDessus(q2, e, 0, o, plat)
+          - (plat ? .035 : 0));
+        var bas = q2.clone().multiplyScalar(f);
+        if(prev){
+          var deh = new THREE.Vector3().crossVectors(q2, dh).normalize().multiplyScalar(EPS);
+          var bs = pos.length / 3;
+          [prev.h, haut, bas, prev.b].forEach(function(p){
+            pos.push(p.x + deh.x, p.y + deh.y, p.z + deh.z);
+          });
+          [.95, .95, .68, .68].forEach(function(g){
+            cr.copy(cb).multiplyScalar(g);
+            col.push(cr.r, cr.g, cr.b);
+          });
+          idx.push(bs, bs+2, bs+1, bs, bs+3, bs+2);
+        }
+        prev = { h:haut, b:bas }; dh = q2.clone();
+      }
+    }
+  });
+  var g2 = new THREE.BufferGeometry();
+  g2.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g2.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g2.setIndex(new THREE.Uint32BufferAttribute(idx, 1));
+  g2.computeVertexNormals();
+  /* le diorama recouvre exactement les cases grossières : sans ce décalage de
+     profondeur, les deux parois se disputent le même plan et l'arête scintille */
+  /* Surtout pas de polygonOffset ici : avec un facteur proportionnel à la
+     pente, une surface vue par la tranche se retrouve tirée de plusieurs unités
+     vers l'œil et traverse la colline qui la cache. C'était la cause des
+     « trous » qu'on voyait dès qu'il y avait du relief. */
+  patch = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors:true,
+    roughness:.95, metalness:0 }));
+  patch.receiveShadow = true; patch.castShadow = true;
+  monde.add(patch);
+
+  if(epos.length){
+    eauGeo = new THREE.BufferGeometry();
+    eauGeo.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
+    eauGeo.setIndex(new THREE.Uint32BufferAttribute(eidx, 1));
+    eauGeo.computeVertexNormals();
+    eauBase = Float32Array.from(epos);
+    /* lisse et peu rugueuse : c'est le reflet du soleil rasant qui fait l'eau,
+       bien plus que sa couleur */
+    patchEau = new THREE.Mesh(eauGeo, new THREE.MeshStandardMaterial({
+      color:C(o.eau ? 0x2F7BAC : 0x5F5A51), roughness:o.eau ? .34 : .9,
+      metalness:0, transparent:!!o.eau, opacity:o.eau ? .94 : 1 }));
+    patchEau.receiveShadow = true;
+    monde.add(patchEau);
+  }
+  return patch;
+}
+/* une houle très lente : quelques millimètres suffisent à faire bouger le
+   reflet, et c'est le reflet qui se voit */
+var tEau = 0;
+function houle(dt){
+  if(!patchEau || !eauBase || !M.glob.eau) return;
+  tEau += dt;
+  var a = eauGeo.attributes.position, p = a.array;
+  for(var k = 0; k < p.length; k += 3){
+    var x = eauBase[k], y = eauBase[k+1], z = eauBase[k+2];
+    var s = 1 + .0016 * Math.sin(x*3.1 + tEau*1.15) + .0012 * Math.sin(z*4.3 - tEau*.8);
+    p[k] = x*s; p[k+1] = y*s; p[k+2] = z*s;
+  }
+  a.needsUpdate = true;
+  /* recalculer les normales fait bouger le reflet : c'est lui qu'on voit */
+  eauGeo.computeVertexNormals();
+}
+function retirerPatch(){
+  if(patch){ monde.remove(patch); patch.geometry.dispose(); patch = null; }
+  if(patchEau){ monde.remove(patchEau); patchEau.geometry.dispose(); patchEau = null; }
+  eauBase = null; eauGeo = null;
+  patchCells = null;
+}
+
+/* ═══════════════ état de la vue ═══════════════ */
+var VUE = "orbite";                 /* orbite · descente · sol · remontee */
+var SOL_CELL = -1;
+var solCam = { el: .88, r: 4.4 };
+/* On ne reste pas posé sur une case : on garde un point de la sphère, un cap
+   tangent, et une référence tangente qui ne tourne jamais avec le regard. Les
+   trois se transportent ensemble quand on se déplace, si bien qu'aucun repère
+   ne saute au passage d'une case — ni aux pôles, où un repère construit sur
+   l'axe du monde se retournerait. */
+var solPos = new THREE.Vector3(0, 1, 0);
+var solAv  = new THREE.Vector3(0, 0, 1);
+var solRef = new THREE.Vector3(0, 0, 1);
+var solAlt = 0;
+var TR = null;                      /* transition en cours */
+var PLAFOND = 0;                    /* rayon sous lequel la caméra serait dans la roche */
+var cielG = null, cielS = null, cibleSol = null, bancs = null;
+var props = [], decorsG = [], detailles = [];
+var selSol = null, selDec = null, armeDeplacer = false;
+var UP = new THREE.Vector3(0, 1, 0);
+
+/* ═══════════════ le ciel et la brume ═══════════════ */
+function texCiel(){
+  var c = document.createElement("canvas"); c.width = 4; c.height = 256;
+  var x = c.getContext("2d"), g = x.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, "#14306B"); g.addColorStop(.40, "#5E8FC4");
+  g.addColorStop(.74, "#C8B79C"); g.addColorStop(1, "#E3A877");
+  x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+  var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+}
+function preparerCiel(){
+  cielG = new THREE.Group(); monde.add(cielG);
+  cielS = new THREE.Mesh(new THREE.SphereGeometry(150, 24, 18),
+    new THREE.MeshBasicMaterial({ map:texCiel(), side:THREE.BackSide,
+      transparent:true, opacity:0, depthWrite:false, fog:false }));
+  cielS.visible = false; cielG.add(cielS);
+  /* La couche de nuages du globe est une coquille à R0×1.30 : en descendant on
+     passe dessous, et de près elle masquerait le sol. On l'efface donc, et on
+     rend au ciel des bancs lointains, posés bas sur l'horizon local — c'est là
+     qu'on les voit quand on est dedans plutôt qu'au-dessus. */
+  bancs = new THREE.Group(); bancs.visible = false; cielG.add(bancs);
+  var mb = new THREE.MeshBasicMaterial({ color:C(0xF6F8FC), transparent:true,
+    opacity:0, depthWrite:false, fog:false });
+  for(var i = 0; i < 14; i++){
+    var az = (i / 14) * 6.28319 + alea(i * 3) * .4;
+    var el = .13 + alea(i * 5) * .42, R = 78 + alea(i * 7) * 34;
+    var g = new THREE.Group();
+    for(var k = 0; k < 4; k++){
+      var s = new THREE.Mesh(new THREE.IcosahedronGeometry(3.4 + alea(i*11 + k) * 2.6, 1), mb);
+      s.position.set((k - 1.5) * 4.6, alea(i*13 + k) * 1.4, alea(i*17 + k) * 3 - 1.5);
+      s.scale.set(1.5, .46, 1);
+      g.add(s);
+    }
+    g.position.set(Math.cos(az) * Math.cos(el) * R, Math.sin(el) * R,
+      Math.sin(az) * Math.cos(el) * R);
+    g.lookAt(0, Math.sin(el) * R, 0);
+    bancs.add(g);
+  }
+  scene.fog = new THREE.FogExp2(new THREE.Color(0xA6BCD2).convertSRGBToLinear(), 0);
+  /* le soleil doit viser la case et non le centre de la planète, sinon la boîte
+     d'ombre — étroite par nécessité — ne couvre pas le diorama */
+  cibleSol = new THREE.Object3D(); scene.add(cibleSol);
+  soleil.target = cibleSol;
+}
+/* k va de 0 (orbite) à 1 (sol). Tout ce qui fait « l'intérieur d'une
+   atmosphère » monte ensemble : le voile du ciel, la brume, l'effacement des
+   étoiles, et le soleil qui descend sur l'horizon en se réchauffant. */
+function ambiance(k){
+  if(!cielS) return;
+  cielS.visible = k > .01;
+  cielS.material.opacity = k * .97;
+  scene.fog.density = k * .021;
+  if(etoiles) etoiles.material.opacity = .75 * (1 - k * .96);
+  if(halo) halo.material.opacity = .14 + k * .20;
+  /* le passage sous la couche : elle s'efface entre 35 % et 70 % de la descente,
+     les bancs lointains prennent le relais juste après */
+  if(nuages){
+    var fn = Math.max(0, Math.min(1, (k - .35) / .35));
+    nuages.visible = fn < .99;
+    nuages.traverse(function(o){ if(o.isMesh) o.material.opacity = .82 * (1 - fn); });
+  }
+  if(bancs){
+    var fb = M.glob.nuages ? Math.max(0, Math.min(1, (k - .55) / .30)) : 0;
+    bancs.visible = fb > .01;
+    bancs.traverse(function(o){ if(o.isMesh) o.material.opacity = fb * .9; });
+  }
+  if(SOL_CELL < 0) return;
+  var b = baseSol();
+  /* le ciel et le soleil s'accrochent à la référence, pas au cap : tourner la
+     tête ne fait pas tourner les nuages ni le soleil avec soi */
+  var rf = solRef.clone().sub(b.up.clone().multiplyScalar(solRef.dot(b.up))).normalize();
+  var rd = new THREE.Vector3().crossVectors(rf, b.up).normalize();
+  cielG.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rd, b.up, rf));
+  var el = (1 - k) * 1.05 + k * .40;
+  var dir = b.up.clone().multiplyScalar(Math.sin(el))
+    .add(rd.clone().multiplyScalar(Math.cos(el) * .84))
+    .add(rf.clone().multiplyScalar(Math.cos(el) * .54)).normalize();
+  var mr = new THREE.Matrix4().extractRotation(monde.matrixWorld);
+  var e = R0 + solAlt;
+  var cp = b.up.clone().multiplyScalar(e).applyMatrix4(mr);
+  cibleSol.position.copy(cp);
+  soleil.position.copy(cp.clone().add(dir.applyMatrix4(mr).multiplyScalar(26)));
+  soleil.intensity = 1.05 + k * .22;
+  /* de près, les faces rasantes deviennent des trous noirs : l'ambiante remonte
+     avec la descente, et se réchauffe avec le soleil */
+  if(ambiant) ambiant.intensity = .22 + k * .06;
+  if(hemi){
+    hemi.intensity = .55 + k * .30;
+    hemi.color.set(new THREE.Color(0x9FC4F0).convertSRGBToLinear());
+    /* au sol, la lumière qui remonte du sol est chaude et compte beaucoup */
+    hemi.groundColor.set(new THREE.Color(k > .5 ? 0x8A6E4C : 0x6B5B42).convertSRGBToLinear());
+  }
+  soleil.color.set(new THREE.Color(k > .55 ? 0xFFE2B6 : 0xFFF4E2).convertSRGBToLinear());
+}
+function soleilOrbite(){
+  soleil.position.set(1, .62, .8);
+  if(cibleSol) cibleSol.position.set(0, 0, 0);
+  soleil.intensity = 1.05;
+  soleil.color.set(new THREE.Color(0xFFF4E2).convertSRGBToLinear());
+}
+
+/* ═══════════════ points dans une cellule ═══════════════
+   hautSol est la seule source de vérité du relief fin : le diorama s'en sert
+   pour déplacer ses sommets, et la pose s'en sert pour savoir où est le sol.
+   Le décalage constant garantit que le diorama passe toujours au-dessus des
+   cellules grossières qu'il recouvre, au lieu de les traverser. */
+function hautSol(p, o, plat){
+  return .055 + (plat ? 0 : bruitFin(p.x, p.y, p.z) * .062);
+}
+function pointCell(i, a, d, o){
+  var rep = repere(i), plat = (bioDe(i) === "ocean");
+  var e = R0 + hauteurCell(i, o);
+  var dir = rep.est.clone().multiplyScalar(Math.cos(a))
+    .add(rep.nord.clone().multiplyScalar(Math.sin(a)));
+  var p = rep.up.clone().multiplyScalar(e).add(dir.multiplyScalar(d * RCELL)).normalize();
+  return p.multiplyScalar(e + hautSol(p, o, plat) - epaule(Math.max(0, 1 - d)));
+}
+/* l'inverse : d'un point du terrain vers (angle, distance) dans sa cellule */
+function angleDist(i, v){
+  var rep = repere(i), p = v.clone().normalize();
+  var proj = p.clone().sub(rep.up.clone().multiplyScalar(p.dot(rep.up)));
+  var x = proj.dot(rep.est), y = proj.dot(rep.nord);
+  var d = Math.sqrt(x*x + y*y) * (R0 + hauteurCell(i, M.glob)) / RCELL;
+  return { a: Math.atan2(y, x), d: Math.min(.80, d) };
+}
+function alea(s){
+  var v = Math.sin(s * 91.7 + 13.3 + GRAINE * .0013) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/* ═══════════════ herbes et cailloux ═══════════════
+   Des milliers de brins ne coûtent qu'un appel de dessin chacun : c'est ce qui
+   fait passer un terrain de « surface colorée » à « endroit ». */
+function semerProps(o){
+  semerRien();
+  var brins = [], pierres = [];
+  patchCells.forEach(function(i){
+    var b = bioDe(i);
+    if(b === "ocean" || b === "banquise") return;
+    /* la densité se compte à l'hectare, pas à la case */
+    var n = Math.max(4, Math.round(((b === "plaine" || b === "toundra") ? 105
+      : (b === "desert" ? 26 : 48)) * ECHC * ECHC));
+    for(var k = 0; k < n; k++){
+      var a = alea(i*7 + k) * 6.28319, d = .06 + alea(i*11 + k*3) * .56;
+      var p = pointCell(i, a, d, o);
+      (k % 7 === 0 ? pierres : brins).push({ p:p, s:.6 + alea(i*5 + k) * .85, a:a });
+    }
+  });
+  var mb = (M.glob.herbe ? 0x77A352 : 0x93836B);
+  if(brins.length){
+    var mh = mm(mb, 1); mh.vertexColors = true;
+    props.push(instancier(geoBrin(), mh, brins, .12));
+  }
+  if(pierres.length){
+    var mp = mm(0x8C8072, .95); mp.vertexColors = true;
+    props.push(instancier(new THREE.DodecahedronGeometry(.020, 0), mp, pierres, .10));
+  }
+  props.forEach(function(p){ monde.add(p); });
+}
+function semerRien(){ props.forEach(function(p){ monde.remove(p); }); props = []; }
+/* De l'herbe, pas des lames : à cette échelle un brin trop grand se lit comme
+   un éclat de verre planté dans le sol. */
+function geoBrin(){
+  var g = new THREE.ConeGeometry(.010, .055, 3);
+  g.translate(0, .0275, 0);
+  return g;
+}
+/* varie : un peu de teinte d'un brin à l'autre. Une pelouse d'un seul vert se
+   lit comme une moquette ; deux pour cent d'écart suffisent à faire un pré. */
+function instancier(geo, mat, liste, varie){
+  /* Dans cette version de three, la couleur par instance n'est appliquée que si
+     le matériau déclare des couleurs de sommets — et il lui faut alors un
+     attribut de couleur, fût-il tout blanc. Sans lui, tout sort noir. */
+  if(varie && !geo.attributes.color){
+    var n = geo.attributes.position.count, blanc = new Float32Array(n*3);
+    for(var z = 0; z < n*3; z++) blanc[z] = 1;
+    geo.setAttribute("color", new THREE.BufferAttribute(blanc, 3));
+  }
+  var m2 = new THREE.InstancedMesh(geo, mat, liste.length);
+  m2.castShadow = true; m2.receiveShadow = true;
+  var d = new THREE.Object3D(), c = new THREE.Color();
+  liste.forEach(function(q, k){
+    d.position.copy(q.p);
+    d.quaternion.setFromUnitVectors(UP, q.p.clone().normalize());
+    d.rotateY(q.a); d.scale.setScalar(q.s); d.updateMatrix();
+    m2.setMatrixAt(k, d.matrix);
+    if(varie){
+      var t = alea(k*31 + 7);
+      c.setRGB(1 + (t-.5)*varie*1.6, 1 + (t-.5)*varie, 1 - (t-.5)*varie*.8);
+      m2.setColorAt(k, c);
+    }
+  });
+  m2.instanceMatrix.needsUpdate = true;
+  if(varie && m2.instanceColor) m2.instanceColor.needsUpdate = true;
+  return m2;
+}
+
+/* ═══════════════ variantes détaillées ═══════════════
+   Même objet, même place, plus de matière : c'est la récompense de la descente.
+   Ce qui n'a pas de variante garde sa forme — elle tient déjà de près. */
+function troncFin(h, r){
+  var g = new THREE.Group();
+  for(var k = 0; k < 3; k++){
+    var s = cy(r*(1 - k*.22), r*(1 - (k+1)*.22), h/3, MAT.tronc, 7);
+    s.position.y = h*(k/3) + h/6;
+    s.rotation.z = (k - 1) * .04;
+    g.add(s);
+  }
+  return g;
+}
+function feuillage(y, r, mat, n, sd){
+  var g = new THREE.Group();
+  for(var k = 0; k < n; k++){
+    var b = new THREE.Mesh(new THREE.IcosahedronGeometry(r * (.62 + alea(sd+k)*.5), 0), mat);
+    b.position.set((alea(sd+k*3) - .5) * r * 1.1, y + (alea(sd+k*5) - .4) * r * .8,
+      (alea(sd+k*7) - .5) * r * 1.1);
+    b.rotation.set(alea(sd+k)*3, alea(sd+k*2)*3, 0);
+    g.add(b);
+  }
+  return g;
+}
+function arbre2(h, sd){
+  var g = new THREE.Group();
+  g.add(troncFin(h*.52, .055));
+  g.add(feuillage(h*.78, h*.38, MAT.feuille, 5, sd));
+  return g;
+}
+function sapin2(h, sd){
+  var g = new THREE.Group();
+  var t = cy(.032, .048, h*.34, MAT.tronc, 6); t.position.y = h*.17; g.add(t);
+  for(var k = 0; k < 5; k++){
+    var c = cn(.19 - k*.032, h*.30, MAT.sapin, 8);
+    c.position.y = h*(.26 + k*.155);
+    c.rotation.y = k * .5;
+    g.add(c);
+  }
+  var n2 = cn(.055, h*.16, MAT.neige, 8); n2.position.y = h*1.02; g.add(n2);
+  return g;
+}
+function maison2(s, sd){
+  var g = new THREE.Group();
+  var m = bt(.26*s, .24*s, .28*s, MAT.mur); m.position.y = .12*s; g.add(m);
+  var t = cn(.235*s, .20*s, MAT.toit, 4); t.position.y = .33*s; t.rotation.y = .785; g.add(t);
+  var p = bt(.07*s, .12*s, .012, MAT.tronc); p.position.set(0, .06*s, .142*s); g.add(p);
+  var f = bt(.055*s, .055*s, .012, MAT.lave); f.position.set(.075*s, .16*s, .142*s); g.add(f);
+  var ch = bt(.05*s, .12*s, .05*s, MAT.roche); ch.position.set(-.07*s, .38*s, .05*s); g.add(ch);
+  g.rotation.y = alea(sd) * 6.28319;
+  return g;
+}
+var FAIRE2 = {
+  arbre: function(){ return arbre2(.66, 3); },
+  foret: function(){
+    var g = new THREE.Group();
+    [[0,0,.66],[.26,.15,.52],[-.24,.11,.58],[.07,-.26,.48],[-.16,-.20,.45],
+     [.30,-.09,.40],[-.32,-.02,.43]].forEach(function(p, k){
+      var a = arbre2(p[2], 11 + k*4);
+      a.position.set(p[0], 0, p[1]); a.rotation.y = alea(k*9) * 6.28319; g.add(a);
+    });
+    return g;
+  },
+  sapins: function(){
+    var g = new THREE.Group();
+    [[0,0,.74],[.24,.17,.54],[-.22,-.13,.60],[.10,-.28,.46]].forEach(function(p, k){
+      var s = sapin2(p[2], 23 + k*3);
+      s.position.set(p[0], 0, p[1]); g.add(s);
+    });
+    return g;
+  },
+  rocher: function(){
+    var g = new THREE.Group();
+    [[0,0,.30],[.22,.15,.19],[-.19,-.13,.15],[.13,-.22,.11],[-.24,.14,.09]]
+      .forEach(function(p, k){
+        var r = new THREE.Mesh(new THREE.DodecahedronGeometry(p[2], 0), MAT.roche);
+        r.position.set(p[0], p[2]*.78, p[1]);
+        r.rotation.set(alea(k)*3, alea(k*3)*3, alea(k*5)*3);
+        r.scale.set(1, .74 + alea(k*7)*.5, 1);
+        g.add(r);
+      });
+    for(var k2 = 0; k2 < 6; k2++){
+      var c = new THREE.Mesh(new THREE.DodecahedronGeometry(.035, 0), MAT.roche);
+      c.position.set((alea(k2*11)-.5)*.8, .02, (alea(k2*13)-.5)*.8); g.add(c);
+    }
+    return g;
+  },
+  village: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.28,.20,.82],[-.26,.17,.88],[.05,-.28,.76]].forEach(function(p, k){
+      var m = maison2(p[2], 31 + k*5);
+      m.position.set(p[0], 0, p[1]); g.add(m);
+    });
+    var ch = new THREE.Mesh(new THREE.CircleGeometry(.10, 8), MAT.sable);
+    ch.rotation.x = -Math.PI/2; ch.position.y = .012; g.add(ch);
+    return g;
+  },
+  champs: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 7; k++){
+      var b = bt(.66, .055, .075, k % 2 ? MAT.ble : MAT.feuille);
+      b.position.set(0, .028, -.255 + k*.085); g.add(b);
+      for(var j = 0; j < 5 && k % 2; j++){
+        var t = cn(.022, .10, MAT.ble, 4);
+        t.position.set(-.26 + j*.13, .10, -.255 + k*.085); g.add(t);
+      }
+    }
+    [[-.35,-.31],[.35,-.31],[-.35,.31],[.35,.31]].forEach(function(p){
+      var po = cy(.014, .016, .18, MAT.tronc, 5);
+      po.position.set(p[0], .09, p[1]); g.add(po);
+    });
+    return g;
+  },
+  lac: function(){
+    var g = new THREE.Group();
+    var d = new THREE.Mesh(new THREE.CircleGeometry(.44, 20), MAT.eau);
+    d.rotation.x = -Math.PI/2; d.position.y = .035; g.add(d);
+    var b = new THREE.Mesh(new THREE.TorusGeometry(.44, .055, 6, 22), MAT.sable);
+    b.rotation.x = Math.PI/2; g.add(b);
+    for(var k = 0; k < 14; k++){
+      var a = alea(k*17) * 6.28319, r = .40 + alea(k*19) * .10;
+      var t = cn(.012, .17, MAT.sapin, 4);
+      t.position.set(Math.cos(a)*r, .085, Math.sin(a)*r);
+      t.rotation.z = (alea(k*23) - .5) * .5; g.add(t);
+    }
+    for(var k2 = 0; k2 < 5; k2++){
+      var a2 = alea(k2*29) * 6.28319;
+      var p = new THREE.Mesh(new THREE.DodecahedronGeometry(.04 + alea(k2*31)*.03, 0), MAT.roche);
+      p.position.set(Math.cos(a2)*.48, .03, Math.sin(a2)*.48); g.add(p);
+    }
+    return g;
+  },
+  cactus: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.26,.18,.62],[-.24,-.14,.48]].forEach(function(p, k){
+      var t = cy(.085*p[2], .10*p[2], .55*p[2], MAT.cactus, 11);
+      t.position.set(p[0], .275*p[2], p[1]); g.add(t);
+      var cp = cy(.085*p[2], .085*p[2], .04, MAT.cactus, 11);
+      cp.position.set(p[0], .55*p[2], p[1]); g.add(cp);
+      if(k < 2){
+        var b = cy(.045, .045, .22*p[2], MAT.cactus, 8);
+        b.position.set(p[0] + .12*p[2], .34*p[2], p[1]); b.rotation.z = -1.1; g.add(b);
+        var b2 = cy(.045, .045, .20*p[2], MAT.cactus, 8);
+        b2.position.set(p[0] + .13*p[2], .47*p[2], p[1]); g.add(b2);
+      }
+      if(k === 0){
+        var f = sp(.035, MAT.petale, 7); f.position.set(p[0], .59, p[1]); g.add(f);
+      }
+    });
+    return g;
+  },
+  palmier: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.24,.17,.78],[-.22,-.15,.86]].forEach(function(p, k){
+      var h = .62 * p[2];
+      for(var s = 0; s < 4; s++){
+        var t = cy(.04 - s*.006, .046 - s*.006, h/4, MAT.tronc, 7);
+        t.position.set(p[0] + s*s*.014, h*(s/4) + h/8, p[1]);
+        t.rotation.z = -.07 * s; g.add(t);
+      }
+      for(var j = 0; j < 6; j++){
+        var a = j * 1.047 + alea(k*7) * 2;
+        var f = cn(.055, .34, MAT.feuille, 5);
+        f.position.set(p[0] + .16*.14 + Math.cos(a)*.15, h + .05, p[1] + Math.sin(a)*.15);
+        f.rotation.z = Math.cos(a) * 1.0; f.rotation.x = -Math.sin(a) * 1.0;
+        g.add(f);
+      }
+      var co = sp(.035, MAT.tronc, 7);
+      co.position.set(p[0] + .05, h - .03, p[1] + .04); g.add(co);
+    });
+    return g;
+  },
+  igloo: function(){
+    var g = new THREE.Group();
+    [[.30, 10, .00], [.265, 9, .105], [.20, 8, .195], [.115, 6, .255]]
+      .forEach(function(q, r2){
+        for(var k = 0; k < q[1]; k++){
+          var a = (k / q[1]) * 6.28319 + r2 * .3;
+          var b = bt(.095, .075, .075, MAT.blanc);
+          b.position.set(Math.cos(a)*q[0], q[2] + .04, Math.sin(a)*q[0]);
+          b.rotation.y = -a; g.add(b);
+        }
+      });
+    var d = new THREE.Mesh(new THREE.SphereGeometry(.10, 10, 6), MAT.blanc);
+    d.position.y = .285; g.add(d);
+    var e = new THREE.Mesh(new THREE.CylinderGeometry(.10, .10, .22, 9, 1, false, 0, Math.PI),
+      MAT.blanc);
+    e.rotation.z = Math.PI/2; e.rotation.y = Math.PI/2; e.position.set(0, .085, .30); g.add(e);
+    return g;
+  }
+};
+
+/* ═══════════════ les décors du sol ═══════════════
+   Petits, bon marché, posables n'importe où dans une case et déplaçables sans
+   frais : c'est l'échelle à laquelle on aménage plutôt qu'on construit. */
+var DECORS = {
+  chene:       { nom:"Un grand chêne",   ic:"🌳", prix:5, req:"herbe", fam:"vege" },
+  bouleaux:    { nom:"Des bouleaux",     ic:"🌲", prix:4, req:"herbe", fam:"vege" },
+  buisson:     { nom:"Un buisson",       ic:"🌿", prix:1, req:"herbe", fam:"vege" },
+  fougeres:    { nom:"Des fougères",     ic:"🌿", prix:1, req:"herbe", fam:"vege" },
+  hautesherbes:{ nom:"Des hautes herbes",ic:"🌾", prix:1, fam:"vege" },
+  fleurs:      { nom:"Des fleurs",       ic:"🌼", prix:1, req:"herbe", fam:"vege" },
+  champignons: { nom:"Des champignons",  ic:"🍄", prix:1, req:"herbe", fam:"vege" },
+
+  cailloux:    { nom:"Des cailloux",     ic:"🪨", prix:1, fam:"pierre" },
+  souche:      { nom:"Une souche",       ic:"🪵", prix:1, req:"herbe", fam:"pierre" },
+  tronc:       { nom:"Un tronc couché",  ic:"🪵", prix:2, req:"herbe", fam:"pierre" },
+  cairn:       { nom:"Un cairn",         ic:"🗿", prix:2, fam:"pierre" },
+  menhir:      { nom:"Un menhir",        ic:"🗿", prix:2, fam:"pierre" },
+  muret:       { nom:"Un muret de pierres", ic:"🧱", prix:2, fam:"pierre" },
+
+  roseaux:     { nom:"Des roseaux",      ic:"🌾", prix:2, req:"eau", fam:"eau" },
+  mare:        { nom:"Une mare",         ic:"💧", prix:3, req:"eau", fam:"eau" },
+  pont:        { nom:"Un ponton",        ic:"🪵", prix:3, req:"eau", fam:"eau" },
+  puits:       { nom:"Un puits",         ic:"🪣", prix:3, req:"eau", fam:"eau" },
+
+  sentier:     { nom:"Un sentier",       ic:"〰", prix:2, fam:"bati" },
+  feu:         { nom:"Un feu de camp",   ic:"🔥", prix:2, fam:"bati" },
+  banc:        { nom:"Un banc",          ic:"🪑", prix:2, fam:"bati" },
+  barriere:    { nom:"Une barrière",     ic:"🚧", prix:2, fam:"bati" },
+  epouvantail: { nom:"Un épouvantail",   ic:"🎃", prix:2, req:"herbe", fam:"bati" },
+  tente:       { nom:"Une tente",        ic:"⛺", prix:3, req:"atmos", fam:"bati" },
+  ruche:       { nom:"Une ruche",        ic:"🐝", prix:3, req:"herbe", fam:"bati" },
+  totem:       { nom:"Un totem",         ic:"🗼", prix:3, fam:"bati" },
+  lanterne:    { nom:"Une lanterne",     ic:"🏮", prix:3, fam:"bati" },
+  moulin:      { nom:"Un petit moulin",  ic:"🌬", prix:4, req:"herbe", fam:"bati" }
+};
+var FAMILLES = [["vege","Végétation"], ["pierre","Pierres et bois"],
+                ["eau","Au bord de l'eau"], ["bati","Constructions"]];
+var ORDRE_DEC = ["chene","bouleaux","buisson","fougeres","hautesherbes","fleurs","champignons",
+                 "cailloux","souche","tronc","cairn","menhir","muret",
+                 "roseaux","mare","pont","puits",
+                 "sentier","feu","banc","barriere","epouvantail","tente","ruche",
+                 "totem","lanterne","moulin"];
+
+var FAIRE_D = {
+  chene: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 4; k++){
+      var s = cy(.075 - k*.013, .095 - k*.013, .14, MAT.tronc, 8);
+      s.position.set(k*k*.010, .07 + k*.14, 0); s.rotation.z = -.05*k; g.add(s);
+    }
+    [[.16,.60,0,.26],[-.15,.66,.06,.22],[.02,.78,-.10,.24],[-.04,.60,-.16,.19],
+     [.13,.74,.13,.20]].forEach(function(q, k){
+      var f = new THREE.Mesh(new THREE.IcosahedronGeometry(q[3], 1), MAT.feuille2);
+      f.position.set(q[0], q[1], q[2]);
+      f.scale.set(1.15, .85, 1.15); f.rotation.y = alea(k*7)*3; g.add(f);
+    });
+    for(var j = 0; j < 4; j++){
+      var r = cy(.014, .022, .20, MAT.tronc, 5);
+      var a = j*1.57 + .4;
+      r.position.set(Math.cos(a)*.09, .50, Math.sin(a)*.09);
+      r.rotation.set(Math.sin(a)*.7, 0, -Math.cos(a)*.7); g.add(r);
+    }
+    /* grand pour un décor, mais il doit rester un arbre dans un paysage et non
+       un paysage à lui seul */
+    g.scale.setScalar(.78);
+    return g;
+  },
+  bouleaux: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.17,.12,.82],[-.15,-.10,.90]].forEach(function(q, k){
+      var h = .86 * q[2];
+      var t = cy(.028, .038, h, MAT.bouleau, 7);
+      t.position.set(q[0], h/2, q[1]); t.rotation.z = (alea(k*5)-.5)*.10; g.add(t);
+      for(var m = 0; m < 4; m++){
+        var mk = bt(.034, .010, .010, MAT.tronc);
+        mk.position.set(q[0] + .028, h*(.22 + m*.19), q[1]);
+        mk.rotation.y = alea(k*9 + m)*3; g.add(mk);
+      }
+      var f = new THREE.Mesh(new THREE.IcosahedronGeometry(.19*q[2], 1), MAT.feuille3);
+      f.position.set(q[0], h + .10, q[1]); f.scale.set(1, 1.25, 1); g.add(f);
+      var f2 = new THREE.Mesh(new THREE.IcosahedronGeometry(.13*q[2], 0), MAT.feuille3);
+      f2.position.set(q[0] + .07, h - .06, q[1] - .05); g.add(f2);
+    });
+    return g;
+  },
+  fougeres: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 9; k++){
+      var a = (k/9)*6.28319 + alea(k)*.5, r = .03 + alea(k*3)*.06;
+      var f = cn(.035, .20, MAT.mousse, 4);
+      f.position.set(Math.cos(a)*r, .10, Math.sin(a)*r);
+      f.rotation.z = Math.cos(a)*.75; f.rotation.x = -Math.sin(a)*.75;
+      f.scale.set(1, 1, .35); g.add(f);
+    }
+    return g;
+  },
+  hautesherbes: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 16; k++){
+      var a = alea(k*11)*6.28319, r = alea(k*13)*.13;
+      var t = cn(.010, .22 + alea(k*17)*.10, MAT.paille, 3);
+      t.position.set(Math.cos(a)*r, .12, Math.sin(a)*r);
+      t.rotation.z = (alea(k*19)-.5)*.5; t.rotation.x = (alea(k*23)-.5)*.5;
+      g.add(t);
+    }
+    return g;
+  },
+  champignons: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.07,.05,.7],[-.06,.04,.55],[.03,-.07,.6]].forEach(function(q, k){
+      var p = cy(.012*q[2], .015*q[2], .07*q[2], MAT.blanc, 6);
+      p.position.set(q[0], .035*q[2], q[1]); g.add(p);
+      var c2 = new THREE.Mesh(new THREE.SphereGeometry(.038*q[2], 9, 5, 0, 6.2832, 0,
+        Math.PI/2), MAT.chapeau);
+      c2.position.set(q[0], .07*q[2], q[1]); c2.scale.y = .8; g.add(c2);
+    });
+    return g;
+  },
+  tronc: function(){
+    var g = new THREE.Group();
+    var t = cy(.058, .070, .52, MAT.tronc, 9);
+    t.rotation.z = Math.PI/2; t.position.y = .062; g.add(t);
+    var m = new THREE.Mesh(new THREE.IcosahedronGeometry(.055, 0), MAT.mousse);
+    m.position.set(.10, .10, .02); m.scale.set(1.4, .5, 1); g.add(m);
+    var b = cy(.016, .020, .12, MAT.tronc, 5);
+    b.position.set(-.18, .12, .04); b.rotation.set(.4, 0, .9); g.add(b);
+    return g;
+  },
+  menhir: function(){
+    var g = new THREE.Group();
+    var p = new THREE.Mesh(new THREE.DodecahedronGeometry(.13, 0), MAT.pierre2);
+    p.scale.set(.75, 2.5, .55); p.position.y = .30; p.rotation.y = .5; g.add(p);
+    for(var k = 0; k < 4; k++){
+      var c2 = new THREE.Mesh(new THREE.DodecahedronGeometry(.03, 0), MAT.roche);
+      var a = k*1.57 + .3;
+      c2.position.set(Math.cos(a)*.13, .02, Math.sin(a)*.13); g.add(c2);
+    }
+    return g;
+  },
+  muret: function(){
+    var g = new THREE.Group();
+    for(var r2 = 0; r2 < 3; r2++){
+      for(var k = 0; k < 6 - r2; k++){
+        var p = new THREE.Mesh(new THREE.DodecahedronGeometry(.048, 0), MAT.pierre2);
+        p.scale.set(1.1, .7, .8);
+        p.position.set(-.26 + k*.105 + r2*.05, .035 + r2*.058, (alea(k*7+r2)-.5)*.03);
+        p.rotation.y = alea(k*11 + r2)*3; g.add(p);
+      }
+    }
+    return g;
+  },
+  mare: function(){
+    var g = new THREE.Group();
+    var d = new THREE.Mesh(new THREE.CircleGeometry(.22, 14),
+      new THREE.MeshStandardMaterial({ color:C(0x2E74AC), roughness:.20, metalness:0 }));
+    d.rotation.x = -Math.PI/2; d.position.y = .022; g.add(d);
+    var b = new THREE.Mesh(new THREE.TorusGeometry(.22, .035, 5, 16), MAT.mousse);
+    b.rotation.x = Math.PI/2; g.add(b);
+    for(var k = 0; k < 6; k++){
+      var a = alea(k*13)*6.28319;
+      var t = cn(.009, .14, MAT.sapin, 4);
+      t.position.set(Math.cos(a)*.20, .07, Math.sin(a)*.20);
+      t.rotation.z = (alea(k*17)-.5)*.5; g.add(t);
+    }
+    return g;
+  },
+  pont: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 7; k++){
+      var l = bt(.12, .018, .015, MAT.tronc);
+      l.position.set(0, .13, -.20 + k*.067); g.add(l);
+    }
+    [[-.055,-.20],[.055,-.20],[-.055,.19],[.055,.19]].forEach(function(q){
+      var p = cy(.012, .014, .14, MAT.tronc, 5);
+      p.position.set(q[0], .065, q[1]); g.add(p);
+    });
+    [[-.065],[.065]].forEach(function(q){
+      var r = bt(.012, .012, .42, MAT.tronc);
+      r.position.set(q[0], .21, 0); g.add(r);
+      for(var m = 0; m < 3; m++){
+        var mp = cy(.008, .008, .09, MAT.tronc, 4);
+        mp.position.set(q[0], .175, -.16 + m*.16); g.add(mp);
+      }
+    });
+    return g;
+  },
+  sentier: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 16; k++){
+      var t = k/15, x = (t - .5)*.62, z = Math.sin(t*4.2)*.11;
+      var p = new THREE.Mesh(new THREE.CircleGeometry(.055 + alea(k*7)*.03, 7), MAT.sable);
+      p.rotation.x = -Math.PI/2; p.rotation.z = alea(k*11)*3;
+      p.position.set(x, .012, z); g.add(p);
+    }
+    return g;
+  },
+  ruche: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 4; k++){
+      var s = cy(.085 - k*.014, .095 - k*.014, .05, MAT.paille, 10);
+      s.position.y = .03 + k*.052; g.add(s);
+    }
+    var t = cn(.075, .05, MAT.paille, 10); t.position.y = .26; g.add(t);
+    var e = bt(.035, .015, .012, MAT.tronc); e.position.set(0, .05, .086); g.add(e);
+    var pl = bt(.26, .015, .22, MAT.tronc); pl.position.y = .008; g.add(pl);
+    return g;
+  },
+  totem: function(){
+    var g = new THREE.Group();
+    var cols = [MAT.rouge, MAT.blanc, MAT.sapin, MAT.ble];
+    for(var k = 0; k < 4; k++){
+      var s = cy(.075, .080, .13, cols[k], 8);
+      s.position.y = .065 + k*.13; g.add(s);
+      if(k % 2 === 0){
+        [-1, 1].forEach(function(d){
+          var a2 = bt(.06, .022, .022, cols[(k+1) % 4]);
+          a2.position.set(d*.095, .065 + k*.13, 0); g.add(a2);
+        });
+      }
+    }
+    var t = cn(.085, .09, MAT.rouge, 8); t.position.y = .58; g.add(t);
+    return g;
+  },
+  epouvantail: function(){
+    var g = new THREE.Group();
+    var m = cy(.013, .015, .46, MAT.tronc, 5); m.position.y = .23; g.add(m);
+    var br = bt(.30, .013, .013, MAT.tronc); br.position.y = .34; g.add(br);
+    var c2 = bt(.11, .15, .07, MAT.tissu); c2.position.y = .30; g.add(c2);
+    var t = sp(.055, MAT.paille, 8); t.position.y = .42; g.add(t);
+    var ch = cn(.095, .06, MAT.paille, 9); ch.position.y = .47; g.add(ch);
+    return g;
+  },
+  buisson: function(){
+    var g = new THREE.Group();
+    g.add(feuillage(.09, .13, MAT.feuille, 4, 41));
+    return g;
+  },
+  fleurs: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 7; k++){
+      var a = alea(k*13) * 6.28319, r = alea(k*17) * .11;
+      var t = cy(.005, .006, .09, MAT.cactus, 4);
+      t.position.set(Math.cos(a)*r, .045, Math.sin(a)*r); g.add(t);
+      var f = sp(.022, k % 2 ? MAT.petale : MAT.petale2, 6);
+      f.position.set(Math.cos(a)*r, .10, Math.sin(a)*r); g.add(f);
+    }
+    return g;
+  },
+  cailloux: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 5; k++){
+      var p = new THREE.Mesh(new THREE.DodecahedronGeometry(.022 + alea(k*7)*.028, 0), MAT.roche);
+      p.position.set((alea(k*11)-.5)*.16, .02, (alea(k*13)-.5)*.16);
+      p.rotation.set(alea(k)*3, alea(k*3)*3, alea(k*5)*3); g.add(p);
+    }
+    return g;
+  },
+  souche: function(){
+    var g = new THREE.Group();
+    var t = cy(.055, .07, .09, MAT.tronc, 9); t.position.y = .045; g.add(t);
+    var d = new THREE.Mesh(new THREE.CircleGeometry(.055, 9), MAT.ble);
+    d.rotation.x = -Math.PI/2; d.position.y = .091; g.add(d);
+    var r = cy(.012, .02, .06, MAT.tronc, 5);
+    r.position.set(.06, .02, .02); r.rotation.z = 1.2; g.add(r);
+    return g;
+  },
+  roseaux: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 9; k++){
+      var a = alea(k*19) * 6.28319, r = alea(k*23) * .10;
+      var t = cn(.008, .19, MAT.sapin, 4);
+      t.position.set(Math.cos(a)*r, .095, Math.sin(a)*r);
+      t.rotation.z = (alea(k*29)-.5)*.6; g.add(t);
+    }
+    return g;
+  },
+  feu: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 7; k++){
+      var a = (k/7)*6.28319;
+      var p = new THREE.Mesh(new THREE.DodecahedronGeometry(.022, 0), MAT.roche);
+      p.position.set(Math.cos(a)*.11, .015, Math.sin(a)*.11); g.add(p);
+    }
+    for(var j = 0; j < 4; j++){
+      var b = cy(.012, .014, .16, MAT.tronc, 5);
+      b.position.set(0, .06, 0);
+      b.rotation.set(.9, j * .8, .3); g.add(b);
+    }
+    var f = cn(.05, .13, MAT.lave, 6); f.position.y = .12; g.add(f);
+    var h = sp(.10, new THREE.MeshBasicMaterial({ color:C(0xFF9A4C), transparent:true,
+      opacity:.16, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }), 8);
+    h.position.y = .13; g.add(h);
+    return g;
+  },
+  banc: function(){
+    var g = new THREE.Group();
+    var a = bt(.30, .022, .085, MAT.tronc); a.position.y = .075; g.add(a);
+    var d = bt(.30, .075, .020, MAT.tronc); d.position.set(0, .12, -.04); g.add(d);
+    [-.12, .12].forEach(function(x){
+      var p = bt(.020, .075, .075, MAT.tronc); p.position.set(x, .037, 0); g.add(p);
+    });
+    return g;
+  },
+  barriere: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 4; k++){
+      var p = cy(.013, .015, .15, MAT.tronc, 5);
+      p.position.set(-.21 + k*.14, .075, 0); g.add(p);
+    }
+    [.055, .115].forEach(function(y){
+      var b = bt(.58, .016, .012, MAT.tronc); b.position.y = y; g.add(b);
+    });
+    return g;
+  },
+  cairn: function(){
+    var g = new THREE.Group();
+    var y = 0;
+    [.055, .046, .038, .028, .020].forEach(function(r, k){
+      var p = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), MAT.pierre2);
+      p.scale.set(1, .6, 1);
+      p.position.set((alea(k*7)-.5)*.02, y + r*.6, (alea(k*11)-.5)*.02);
+      p.rotation.y = alea(k*13)*3; g.add(p);
+      y += r * 1.15;
+    });
+    return g;
+  },
+  tente: function(){
+    var g = new THREE.Group();
+    var t = cn(.18, .24, MAT.tissu, 4); t.position.y = .12; t.rotation.y = .785; g.add(t);
+    var m = cy(.008, .008, .30, MAT.tronc, 4); m.position.y = .15; g.add(m);
+    var d = bt(.09, .13, .012, MAT.tronc); d.position.set(0, .065, .11); g.add(d);
+    return g;
+  },
+  puits: function(){
+    var g = new THREE.Group();
+    var b = cy(.10, .11, .12, MAT.pierre2, 10); b.position.y = .06; g.add(b);
+    var e = new THREE.Mesh(new THREE.CircleGeometry(.085, 10), MAT.eau);
+    e.rotation.x = -Math.PI/2; e.position.y = .105; g.add(e);
+    [-.09, .09].forEach(function(x){
+      var p = cy(.010, .012, .20, MAT.tronc, 5); p.position.set(x, .22, 0); g.add(p);
+    });
+    var to = cn(.15, .09, MAT.toit, 4); to.position.y = .36; to.rotation.y = .785; g.add(to);
+    var se = cy(.012, .012, .17, MAT.tronc, 6);
+    se.position.y = .30; se.rotation.z = Math.PI/2; g.add(se);
+    return g;
+  },
+  lanterne: function(){
+    var g = new THREE.Group();
+    var p = cy(.014, .018, .30, MAT.roche, 6); p.position.y = .15; g.add(p);
+    var c = bt(.07, .09, .07, MAT.lave); c.position.y = .34; g.add(c);
+    var t = cn(.065, .05, MAT.roche, 4); t.position.y = .41; t.rotation.y = .785; g.add(t);
+    var h = sp(.14, new THREE.MeshBasicMaterial({ color:C(0xFFD08A), transparent:true,
+      opacity:.13, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }), 8);
+    h.position.y = .34; g.add(h);
+    return g;
+  },
+  moulin: function(){
+    var g = new THREE.Group();
+    var b = cy(.11, .14, .34, MAT.mur, 9); b.position.y = .17; g.add(b);
+    var t = cn(.14, .11, MAT.toit, 9); t.position.y = .39; g.add(t);
+    var ax = new THREE.Group(); ax.position.set(0, .30, .13);
+    for(var k = 0; k < 4; k++){
+      var p = bt(.035, .21, .010, MAT.voile);
+      p.position.set(Math.sin(k*1.5708)*.11, Math.cos(k*1.5708)*.11, 0);
+      p.rotation.z = -k * 1.5708; ax.add(p);
+    }
+    var mo = cy(.014, .014, .06, MAT.tronc, 6);
+    mo.rotation.x = Math.PI/2; ax.add(mo);
+    g.add(ax);
+    return g;
+  }
+};
+
+/* ═══════════════ placer et replacer ═══════════════ */
+function placerLibre(i, g, q){
+  var p = pointCell(i, q.a || 0, q.d || 0, M.glob);
+  g.position.copy(p.clone().multiplyScalar(1.0013));
+  g.quaternion.setFromUnitVectors(UP, p.clone().normalize());
+  if(q.r) g.rotateY(q.r);
+}
+function placerObjet(i, g){
+  placerLibre(i, g, M.pos[i] || { a:0, d:0, r:0 });
+}
+function poserDecors(){
+  decorsG.forEach(function(g){ monde.remove(g); });
+  decorsG = [];
+  Object.keys(M.decors).forEach(function(ks){
+    var i = parseInt(ks, 10), L = M.decors[ks] || [];
+    L.forEach(function(q, n){
+      var f = FAIRE_D[q.k]; if(!f) return;
+      var g = f();
+      g.userData = { cell:i, idx:n, type:"dec" };
+      placerLibre(i, g, q);
+      g.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      monde.add(g); decorsG.push(g);
+    });
+  });
+}
+function detaillerObjets(on){
+  detailles.forEach(function(i){ if(M.cells[i]) poser(i, M.cells[i], true); });
+  detailles = [];
+  if(!on || !patchCells) return;
+  patchCells.forEach(function(i){
+    var id = M.cells[i];
+    if(!id || !FAIRE2[id] || !objets[i]) return;
+    monde.remove(objets[i]); delete objets[i];
+    var g = FAIRE2[id]();
+    g.scale.setScalar(ECHC);
+    g.userData = { cell:i, type:"obj" };
+    placerObjet(i, g);
+    g.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    monde.add(g); objets[i] = g; detailles.push(i);
+  });
+}
+
+/* ═══════════════ acheter et manipuler au sol ═══════════════ */
+function decorsOuverts(){
+  return ORDRE_DEC.filter(function(k){
+    var o = DECORS[k]; return !o.req || !!M.glob[o.req];
+  });
+}
+function choisirDecor(k){
+  var o = DECORS[k];
+  if(selDec === k){ selDec = null; remplirListe(); dire(""); return; }
+  if(o.prix > solde()){
+    dire("Il manque " + (o.prix - solde()) + " cristaux pour " + o.nom.toLowerCase() + ".");
+    return;
+  }
+  selDec = k; selSol = null; armeDeplacer = false; remplirListe();
+  dire("Touche le sol à l'endroit où poser " + o.nom.toLowerCase() + ".");
+}
+function poserDecor(i, k, ad){
+  var o = DECORS[k];
+  if(bioDe(i) === "ocean"){ dire("Ça ne tient pas sur l'eau."); return; }
+  if(o.prix > solde()){ dire("Il manque " + (o.prix - solde()) + " cristaux."); return; }
+  if(!M.decors[i]) M.decors[i] = [];
+  if(M.decors[i].length >= 8){ dire("Cette case est déjà bien occupée."); return; }
+  M.decors[i].push({ k:k, a:ad.a, d:Math.min(.64, ad.d),
+    r: alea(i*13 + M.decors[i].length) * 6.28319 });
+  sauver(); poserDecors(); majSolde();
+  if(o.prix > solde()){ selDec = null; dire("C'est posé. Il faudra revenir jouer pour continuer."); }
+  else dire("C'est posé. Tu peux en poser d'autres, ou toucher un objet pour le déplacer.");
+  remplirListe();
+}
+function nomSel(){
+  if(!selSol) return "";
+  var u = selSol.userData;
+  if(u.type === "bete") return defBete(u.k) ? defBete(u.k).nom : "Cet animal";
+  if(u.type === "obj") return OBJETS[M.cells[u.cell]] ? OBJETS[M.cells[u.cell]].nom : "Cet objet";
+  var L = M.decors[u.cell];
+  return (L && L[u.idx] && DECORS[L[u.idx].k]) ? DECORS[L[u.idx].k].nom : "Ce décor";
+}
+function montrerSel(){
+  if(!selSol){ dire(""); return; }
+  dire(nomSel() + (armeDeplacer ? " — touche le sol à l'endroit voulu." : " est en main."),
+    { tou:1, dep:1, sup:1 });
+}
+function tourner(){
+  if(!selSol) return;
+  var u = selSol.userData;
+  if(u.type === "obj"){
+    var q = M.pos[u.cell] || { a:0, d:0, r:0 };
+    q.r = ((q.r || 0) + .6283) % 6.28319;
+    M.pos[u.cell] = q; sauver(); placerObjet(u.cell, selSol);
+  } else if(u.type === "bete"){
+    var B = M.betes[u.cell]; if(!B || !B[u.idx]) return;
+    B[u.idx].r = ((B[u.idx].r || 0) + .6283) % 6.28319;
+    sauver(); selSol.userData.cap = B[u.idx].r; placerBete(selSol);
+  } else {
+    var L = M.decors[u.cell]; if(!L || !L[u.idx]) return;
+    L[u.idx].r = ((L[u.idx].r || 0) + .6283) % 6.28319;
+    sauver(); placerLibre(u.cell, selSol, L[u.idx]);
+  }
+  montrerSel();
+}
+function retirerSel(){
+  if(!selSol) return;
+  var u = selSol.userData;
+  if(u.type === "bete"){ retirerBete(selSol); return; }
+  if(u.type === "dec"){
+    var L = M.decors[u.cell]; if(!L) return;
+    L.splice(u.idx, 1);
+    if(!L.length) delete M.decors[u.cell];
+    selSol = null; armeDeplacer = false;
+    sauver(); poserDecors(); majSolde(); remplirListe();
+    dire("C'est repris, les cristaux sont revenus.");
+  } else {
+    var c = u.cell;
+    selSol = null; armeDeplacer = false;
+    detailles = detailles.filter(function(x){ return x !== c; });
+    delete M.pos[c];
+    retirer(c);
+    dire("C'est repris, les cristaux sont revenus.");
+  }
+}
+
+/* ═══════════════ retoucher le terrain ═══════════════
+   Sculpter ne coûte rien. Les cristaux paient les choses — les transformations,
+   les objets, les décors ; la forme du sol, elle, est de l'expression, et on
+   doit pouvoir revenir sur une maladresse sans que cela se paie. C'est aussi ce
+   qui évite qu'un patient reste bloqué devant une case qu'il a ratée. */
+var outil = null, presse = null, globeSale = false;
+var SOLS = [
+  { id:"ocean",    nom:"De l'eau",   ic:"💧", req:"eau" },
+  { id:"plage",    nom:"Du sable",   ic:"🏖", req:"eau" },
+  { id:"plaine",   nom:"De l'herbe", ic:"🌿", req:"herbe" },
+  { id:"montagne", nom:"De la roche",ic:"⛰", req:"relief" },
+  { id:"desert",   nom:"Du désert",  ic:"🏜", req:"climat" },
+  { id:"toundra",  nom:"De la toundra", ic:"🍂", req:"climat" },
+  { id:"neige",    nom:"De la neige",ic:"❄", req:"relief" },
+  { id:"banquise", nom:"De la banquise", ic:"🧊", req:"climat" }
+];
+function solsOuverts(){
+  return SOLS.filter(function(s){ return !s.req || !!M.glob[s.req]; });
+}
+function choisirOutil(k){
+  if(outil === k){ outil = null; presse = null; remplirListe(); dire(""); return; }
+  outil = k; selObj = null; selDec = null; selSol = null; armeDeplacer = false;
+  remplirListe();
+  if(k === "haut") dire("Touche une case pour la soulever d'un cran.");
+  else if(k === "bas") dire("Touche une case pour l'enfoncer d'un cran.");
+  else if(k === "copier") dire("Touche la case dont tu veux reprendre le sol.");
+  else dire("Touche les cases à recouvrir.");
+}
+function appliquerOutil(i){
+  if(!outil) return false;
+  var t = M.terre[i] || {};
+  if(outil === "copier"){
+    presse = { b:bioDe(i), h:cranDe(i) };
+    outil = "coller"; remplirListe(); surligner(i);
+    dire("Ce sol est en main. Touche les cases où le poser.");
+    return true;
+  }
+  if(outil === "coller"){
+    if(!presse) return true;
+    t.b = presse.b; t.h = presse.h;
+  } else if(outil === "haut" || outil === "bas"){
+    t.h = Math.max(-3, Math.min(4, (t.h || 0) + (outil === "haut" ? 1 : -1)));
+  } else {
+    t.b = outil;
+  }
+  if(!t.h) delete t.h;
+  if(t.b === INFO[i].b) delete t.b;
+  couleursSales = true;
+  if(t.b === undefined && t.h === undefined) delete M.terre[i];
+  else M.terre[i] = t;
+  /* ce qui était posé sur une case devenue eau revient au patient entier */
+  if(bioDe(i) === "ocean"){
+    if(M.cells[i]) retirer(i);
+    if(M.decors[i]){ delete M.decors[i]; poserDecors(); majSolde(); }
+  }
+  sauver();
+  dernierEdit = performance.now();
+  refaireTerrain(i);
+  var nb = bioDe(i), cr2 = cranDe(i);
+  dire(NOM_BIOME[nb].charAt(0).toUpperCase() + NOM_BIOME[nb].slice(1)
+    + (cr2 ? (cr2 > 0 ? " · +" + cr2 : " · " + cr2) : "") + ".");
+  return true;
+}
+var dernierEdit = 0;
+/* On ne refait pas le globe entier à chaque coup de pioche : au sol on ne le
+   voit pas, et il sera reconstruit en remontant. */
+function refaireTerrain(i){
+  var auSol = (VUE === "sol" || VUE === "descente");
+  var dedans = auSol && patchCells && patchCells.indexOf(i) >= 0;
+  if(dedans) globeSale = true;
+  else { construireGlobe(M.glob); globeSale = false; }
+  if(auSol){
+    construirePatch(SOL_CELL, M.glob);
+    semerProps(M.glob);
+    detaillerObjets(true);
+    calculerPlafond(SOL_CELL);
+  }
+  replacerObjets(); poserDecors(); poserBetes();
+  surligner(i);
+}
+function rafraichirGlobe(){
+  if(!globeSale) return;
+  globeSale = false;
+  construireGlobe(M.glob); replacerObjets(); poserDecors();
+}
+
+/* ═══════════════ viser au sol ═══════════════ */
+function viserSol(cx, cy2){
+  if(!patch) return;
+  var r = renderer.domElement.getBoundingClientRect();
+  souris.x = ((cx - r.left) / r.width) * 2 - 1;
+  souris.y = -((cy2 - r.top) / r.height) * 2 + 1;
+  ray.setFromCamera(souris, camera);
+  var inv = new THREE.Matrix4().copy(monde.matrixWorld).invert();
+  var hp = ray.intersectObject(patch, false);
+  var loc = hp.length ? hp[0].point.clone().applyMatrix4(inv) : null;
+  var i = loc ? cellDe(loc) : -1;
+  if(i >= 0 && patchCells.indexOf(i) < 0) i = -1;
+
+  /* 0 · un outil de terrain est en main : il passe avant tout le reste. Hors
+     du diorama on retombe sur le globe, pour pouvoir retoucher une case qu'on
+     voit au loin sans avoir à s'en approcher. */
+  if(outil){
+    var j = i;
+    if(j < 0 && planete){
+      var hg = ray.intersectObject(planete, false);
+      if(hg.length) j = cellDe(hg[0].point.clone().applyMatrix4(inv));
+    }
+    if(j < 0){ dire("Vise une case du sol."); return; }
+    surligner(j); appliquerOutil(j); return;
+  }
+
+  /* 1 · quelque chose est en main et on a demandé à le déplacer */
+  if(armeDeplacer && selSol && i >= 0){
+    var ad = angleDist(i, loc), u = selSol.userData;
+    if(u.type === "obj"){
+      if(i !== u.cell){ dire("Un objet de cette taille reste sur sa case.", { dep:1, tou:1, sup:1 }); return; }
+      var q0 = M.pos[i] || {};
+      M.pos[i] = { a:ad.a, d:Math.min(.52, ad.d), r:q0.r || 0 };
+      sauver(); placerObjet(i, selSol);
+    } else if(u.type === "bete"){
+      var B2 = M.betes[u.cell]; if(!B2 || !B2[u.idx]){ selSol = null; return; }
+      var qb = B2[u.idx];
+      if(defBete(qb.k).bio.indexOf(bioDe(i)) < 0){
+        dire("Il ne vivrait pas là.", { dep:1, tou:1, sup:1 }); return;
+      }
+      qb.a = ad.a; qb.d = Math.min(.52, ad.d);
+      if(i !== u.cell){
+        B2.splice(u.idx, 1);
+        if(!B2.length) delete M.betes[u.cell];
+        if(!M.betes[i]) M.betes[i] = [];
+        M.betes[i].push(qb);
+        sauver(); poserBetes(); selSol = null; armeDeplacer = false;
+        surligner(i); dire("Déménagé."); return;
+      }
+      sauver(); reveiller(selSol, qb);
+      armeDeplacer = false; surligner(i); montrerSel(); return;
+    } else {
+      var L = M.decors[u.cell]; if(!L || !L[u.idx]){ selSol = null; return; }
+      var q = L[u.idx];
+      q.a = ad.a; q.d = Math.min(.64, ad.d);
+      if(i !== u.cell){
+        L.splice(u.idx, 1);
+        if(!L.length) delete M.decors[u.cell];
+        if(!M.decors[i]) M.decors[i] = [];
+        M.decors[i].push(q);
+        sauver(); poserDecors(); selSol = null; armeDeplacer = false;
+        surligner(i); dire("Déplacé."); return;
+      }
+      sauver(); placerLibre(i, selSol, q);
+    }
+    armeDeplacer = false; surligner(i); montrerSel(); return;
+  }
+
+  /* 2 · on touche ce qui est posé : on le prend en main */
+  if(!selDec && !selBete){
+    var cibles = decorsG.concat(betesG.filter(function(g){
+      return patchCells.indexOf(g.userData.cell) >= 0; }));
+    Object.keys(objets).forEach(function(k){
+      if(patchCells.indexOf(parseInt(k, 10)) >= 0) cibles.push(objets[k]);
+    });
+    var ho = cibles.length ? ray.intersectObjects(cibles, true) : [];
+    if(ho.length){
+      var g = ho[0].object;
+      while(g && !g.userData.type) g = g.parent;
+      if(g){
+        selSol = g; armeDeplacer = false;
+        surligner(g.userData.cell); montrerSel(); return;
+      }
+    }
+  }
+
+  /* 3 · le sol nu */
+  if(i < 0){ selSol = null; surligner(-1); dire(""); return; }
+  surligner(i);
+  if(selBete){ poserBete(i, selBete, angleDist(i, loc)); return; }
+  if(selDec){ poserDecor(i, selDec, angleDist(i, loc)); return; }
+  selSol = null;
+  dire("Une case de " + NOM_BIOME[bioDe(i)]
+    + ". Choisis un décor dans l'atelier, ou touche ce qui est posé pour le déplacer.");
+}
+
+/* ═══════════════ la caméra ═══════════════ */
+function camOrbite(){
+  return { p:new THREE.Vector3(
+      cam.cible.x + cam.r * Math.sin(cam.ph) * Math.sin(cam.th),
+      cam.cible.y + cam.r * Math.cos(cam.ph),
+      cam.cible.z + cam.r * Math.sin(cam.ph) * Math.cos(cam.th)),
+    c:cam.cible.clone() };
+}
+/* le trièdre local : la verticale, le cap, et la droite du cap */
+function baseSol(){
+  var up = solPos.normalize();
+  var av = solAv.sub(up.clone().multiplyScalar(solAv.dot(up)));
+  if(av.lengthSq() < 1e-8){
+    av.copy(Math.abs(up.y) < .9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0));
+    av.sub(up.clone().multiplyScalar(av.dot(up)));
+  }
+  av.normalize();
+  return { up:up.clone(), av:av.clone(),
+           dr:new THREE.Vector3().crossVectors(av, up).normalize() };
+}
+/* Se déplacer, c'est faire tourner le point visé autour du centre de la planète.
+   L'échelle vient de la distance : un pixel tiré vaut ce qu'il couvre de sol,
+   de sorte que le terrain suit vraiment le doigt. */
+function avancer(dx, dy){
+  var b = baseSol();
+  var h = renderer.domElement.clientHeight || 700;
+  var k = 2 * solCam.r * Math.tan(camera.fov * Math.PI / 360) / h;
+  var dep = b.dr.clone().multiplyScalar(-dx * k).add(b.av.clone().multiplyScalar(dy * k));
+  solPos.add(dep.divideScalar(R0)).normalize();
+  /* transport parallèle : on reprojette cap et référence sur le nouveau plan */
+  var up = solPos;
+  solAv.sub(up.clone().multiplyScalar(solAv.dot(up))).normalize();
+  solRef.sub(up.clone().multiplyScalar(solRef.dot(up))).normalize();
+}
+function pivoter(dx, dy){
+  var b = baseSol();
+  solAv.applyAxisAngle(b.up, -dx * .005).normalize();
+  solCam.el = Math.max(.45, Math.min(1.36, solCam.el - dy * .0035));
+}
+/* l'altitude du sol change d'un bloc à l'autre : on la rejoint en douceur,
+   sinon la caméra sauterait de deux unités à chaque bord de case */
+function suivreSol(dt){
+  var i = cellDe(solPos);
+  var cible = hauteurCell(i, M.glob);
+  solAlt += (cible - solAlt) * Math.min(1, dt * 4.5);
+  if(i !== SOL_CELL) patchAttente = i;
+  majPatch();
+  /* Le globe sous le diorama porte encore l'ancien terrain. On le refait dès
+     que la main s'arrête, sinon une case retouchée puis quittée réapparaîtrait
+     comme avant une fois sortie du diorama. */
+  if(globeSale && patchAttente < 0 && performance.now() - dernierEdit > 600) rafraichirGlobe();
+}
+var patchAttente = -1, patchQuand = 0;
+function calculerPlafond(i){
+  PLAFOND = 0;
+  autourDe(i, RANGS + 1).forEach(function(v){
+    PLAFOND = Math.max(PLAFOND, R0 + hauteurCell(v, M.glob));
+  });
+  PLAFOND += .62;
+}
+/* refaire le diorama coûte quelques dizaines de millisecondes : on l'espace
+   pour qu'un déplacement rapide ne se transforme pas en saccade continue */
+function majPatch(){
+  if(patchAttente < 0) return;
+  var t = performance.now();
+  if(t - patchQuand < 110) return;
+  patchQuand = t;
+  var i = patchAttente; patchAttente = -1;
+  if(i === SOL_CELL) return;
+  SOL_CELL = i;
+  construirePatch(i, M.glob);
+  semerProps(M.glob);
+  detaillerObjets(true);
+  calculerPlafond(i);
+  majBetesVives();
+  if(selSol && patchCells.indexOf(selSol.userData.cell) < 0){
+    selSol = null; armeDeplacer = false; surligner(-1); dire("");
+  }
+}
+function camSol(){
+  var b = baseSol();
+  var e = R0 + solAlt + .40;
+  /* Sur une planète de dix unités de rayon, une case voisine en relief est un
+     mur de deux unités : une vue trop rasante enterrerait la caméra. On relève
+     donc l'angle juste assez pour la faire passer au-dessus du plus haut
+     sommet des environs. Repousser la caméra en l'éloignant du centre, comme
+     on serait tenté de le faire, la ferait sortir de la planète par le côté et
+     on verrait l'espace sous l'horizon. */
+  var r = solCam.r, el = solCam.el;
+  var s = (PLAFOND*PLAFOND - e*e - r*r) / (2 * e * r);
+  if(s > -1 && s < 1){ var em = Math.asin(s); if(em > el) el = Math.min(1.45, em); }
+  var centre = b.up.clone().multiplyScalar(e);
+  var dir = b.up.clone().multiplyScalar(Math.sin(el))
+    .sub(b.av.clone().multiplyScalar(Math.cos(el)));
+  var mr = new THREE.Matrix4().extractRotation(monde.matrixWorld);
+  var p = centre.clone().add(dir.multiplyScalar(r));
+  /* la verticale du lieu, dans le repère du monde : c'est elle qui doit faire
+     le haut de l'image, sinon la vue bascule à mesure qu'on change de latitude
+     et se retrouve la tête en bas de l'autre côté de la planète */
+  return { p:p.applyMatrix4(mr), c:centre.clone().applyMatrix4(mr),
+           u:b.up.clone().applyMatrix4(mr) };
+}
+/* On interpole la direction et le rayon séparément : une interpolation droite
+   de la position ferait passer la caméra à travers la planète. */
+/* descendre sans viser : on tombe sur la case qui est sous la caméra */
+function explorerCentre(){
+  if(VUE !== "orbite") return;
+  var loc = camera.position.clone().applyMatrix4(
+    new THREE.Matrix4().copy(monde.matrixWorld).invert());
+  descendre(cellDe(loc));
+}
+function majCam(dt){
+  if(VUE === "sol") suivreSol(dt);
+  var pres = .5, loin = 500;
+  if(VUE !== "orbite"){ pres = .05; loin = 340; }
+  if(camera.near !== pres){ camera.near = pres; camera.far = loin; camera.updateProjectionMatrix(); }
+  if(VUE === "orbite"){
+    var A0 = camOrbite();
+    camera.up.set(0, 1, 0);
+    camera.position.copy(A0.p); camera.lookAt(A0.c);
+    return;
+  }
+  if(!TR){
+    var S = camSol();
+    camera.up.copy(S.u);
+    camera.position.copy(S.p); camera.lookAt(S.c);
+    return;
+  }
+  /* la descente se mesure à l'horloge et non aux images : sur un appareil lent
+     elle est saccadée, jamais interminable */
+  TR.t = Math.min(1, (performance.now() - TR.t0) / (TR.dur * 1000));
+  var u = TR.sens > 0 ? TR.t : 1 - TR.t;
+  var k = u * u * (3 - 2 * u);
+  var A = camOrbite(), B = camSol();
+  var ra = A.p.length(), rb = B.p.length();
+  var dir = A.p.clone().normalize().lerp(B.p.clone().normalize(), k).normalize();
+  camera.position.copy(dir.multiplyScalar(ra + (rb - ra) * k));
+  /* la verticale bascule progressivement de l'axe du monde à celle du lieu */
+  var hu = new THREE.Vector3(0, 1, 0).lerp(B.u, k);
+  if(hu.lengthSq() < 1e-6) hu.copy(B.u);
+  camera.up.copy(hu.normalize());
+  camera.lookAt(new THREE.Vector3().lerpVectors(A.c, B.c, k));
+  ambiance(k);
+  if(TR.t >= 1){
+    if(TR.sens > 0){
+      TR = null; VUE = "sol"; majPanneau();
+      dire("Te voilà au sol. Fais glisser pour survoler la planète, pince pour "
+        + "t'approcher, deux doigts pour tourner la tête.");
+    } else { TR = null; finRemontee(); }
+  }
+}
+
+/* ═══════════════ entrer et sortir ═══════════════ */
+function descendre(i){
+  if(VUE !== "orbite" || i < 0) return;
+  SOL_CELL = i;
+  patchAttente = -1; patchQuand = performance.now();
+  calculerPlafond(i);
+  construirePatch(i, M.glob);
+  semerProps(M.glob);
+  detaillerObjets(true);
+  majBetesVives();
+  var r0 = repere(i);
+  solPos.set(CELLS[i].c[0], CELLS[i].c[1], CELLS[i].c[2]).normalize();
+  solAv.copy(r0.nord); solRef.copy(r0.nord);
+  solAlt = hauteurCell(i, M.glob);
+  solCam.el = .88; solCam.r = 4.4;
+  renderer.shadowMap.enabled = true;
+  soleil.castShadow = true;
+  soleil.shadow.mapSize.set(1024, 1024);
+  soleil.shadow.bias = -.0008;
+  var sc = soleil.shadow.camera;
+  sc.left = -4.6; sc.right = 4.6; sc.top = 4.6; sc.bottom = -4.6;
+  sc.near = 6; sc.far = 48; sc.updateProjectionMatrix();
+  VUE = "descente";
+  TR = { t:0, t0:performance.now(), dur:2.8, sens:1 };
+  selObj = null; selDec = null; selBete = null; selSol = null; armeDeplacer = false;
+  surligner(-1); majPanneau();
+  dire("On descend vers " + ART[bioDe(i)] + "…");
+}
+/* on remonte à la verticale de là où on est arrivé, pas de là d'où on est
+   parti : sans cela, traverser la planète puis remonter ramènerait brutalement
+   au point de départ */
+function remonter(){
+  if(VUE !== "sol") return;
+  var d = solPos.clone().applyMatrix4(new THREE.Matrix4().extractRotation(monde.matrixWorld));
+  cam.ph = Math.max(.22, Math.min(2.92, Math.acos(Math.max(-1, Math.min(1, d.y)))));
+  cam.th = Math.atan2(d.x, d.z);
+  VUE = "remontee";
+  TR = { t:0, t0:performance.now(), dur:2.0, sens:-1 };
+  selSol = null; selDec = null; selBete = null; armeDeplacer = false;
+  surligner(-1); dire("On remonte…");
+}
+function finRemontee(){
+  VUE = "orbite"; TR = null;
+  outil = null; presse = null;
+  detaillerObjets(false);
+  retirerPatch(); semerRien(); majBetesVives();
+  SOL_CELL = -1; patchAttente = -1;
+  ambiance(0); soleilOrbite();
+  renderer.shadowMap.enabled = false;
+  soleil.castShadow = false;
+  rafraichirGlobe();
+  majPanneau(); dire("");
+}
+
+/* ═══════════════ l'atelier selon la vue ═══════════════ */
+function majPanneau(){
+  var bas = (VUE === "sol" || VUE === "descente");
+  var bs = document.querySelectorAll(".onglets button");
+  var T = bas ? [["sol","Décors"], ["terre","Terrain"], ["betes","Animaux"]]
+              : [["terra","Planète"], ["poser","Poser"], ["terre","Terrain"],
+                 ["betes","Animaux"]];
+  for(var k = 0; k < bs.length; k++){
+    if(k < T.length){ bs[k].hidden = false; bs[k].dataset.tab = T[k][0];
+      bs[k].textContent = T[k][1]; }
+    else bs[k].hidden = true;
+  }
+  var ok = T.some(function(t){ return t[0] === onglet; });
+  if(!ok) onglet = T[0][0];
+  for(var k2 = 0; k2 < bs.length; k2++)
+    bs[k2].classList.toggle("on", !bs[k2].hidden && bs[k2].dataset.tab === onglet);
+  $("bSol").hidden = !bas;
+  $("bExplorer").hidden = bas;
+  $("bRenommer").hidden = bas;
+  remplirListe();
+}
+
+/* ═══════════════ matériaux mis en cache ═══════════════ */
+var MATB = {};
+function matC(h, r){
+  var c = h + "_" + (r === undefined ? 9 : r);
+  if(!MATB[c]) MATB[c] = mm(h, r === undefined ? .9 : r);
+  return MATB[c];
+}
+function lueur(h, o2){
+  return new THREE.MeshBasicMaterial({ color:C(h), transparent:true, opacity:o2,
+    blending:THREE.AdditiveBlending, depthWrite:false, fog:false });
+}
+
+/* ═══════════════ trois archétypes ═══════════════
+   Presque tout ce qui marche tient dans un corps, une tête, quatre pattes et
+   une queue ; ce qui vole dans un corps et deux ailes ; ce qui nage dans un
+   fuseau et une caudale. Le reste n'est que proportions — et ce sont les
+   proportions, pas le nombre de polygones, qui font reconnaître une bête. */
+function quadrupede(o){
+  var g = new THREE.Group();
+  var m = matC(o.c), m2 = matC(o.c2 || o.c);
+  var L = o.L, H = o.H, W = o.W, hp = o.hp;
+  var corps = bt(W, H, L, m); corps.position.y = hp + H*.5; g.add(corps);
+  if(o.croupe){
+    var cr = bt(W*1.04, H*1.12, L*.34, m);
+    cr.position.set(0, hp + H*.52, -L*.30); g.add(cr);
+  }
+  /* cou et tête : c'est leur hauteur relative qui distingue un cerf d'un loup */
+  var yc = hp + H*(o.cou === undefined ? .9 : o.cou);
+  var zc = L*.42;
+  if(o.cou !== 0){
+    var co = bt(W*.44, H*(o.cou || .9), W*.44, m);
+    co.position.set(0, hp + H*(.6 + (o.cou || .9)*.5), zc);
+    co.rotation.x = -(o.pench || .25); g.add(co);
+  }
+  var tz = zc + L*(o.tz === undefined ? .16 : o.tz);
+  var ty = hp + H*(o.ty === undefined ? 1.35 : o.ty);
+  var tete = bt(W*.66, H*.62, L*.30, m); tete.position.set(0, ty, tz); g.add(tete);
+  var mus = bt(W*.40, H*.34, L*.20, m2);
+  mus.position.set(0, ty - H*.10, tz + L*.22); g.add(mus);
+  if(o.oreilles){
+    [-1, 1].forEach(function(s){
+      var or = bt(W*.14, H*(o.oreilles), W*.10, m);
+      or.position.set(s*W*.24, ty + H*(.30 + o.oreilles*.5), tz - L*.06);
+      or.rotation.z = s*.28; g.add(or);
+    });
+  }
+  var pattes = [];
+  [[-1,1],[1,1],[-1,-1],[1,-1]].forEach(function(s){
+    var pg = new THREE.Group();
+    var pm = bt(W*.24, hp, W*.24, m2); pm.position.y = -hp*.5; pg.add(pm);
+    pg.position.set(s[0]*W*.32, hp, s[1]*L*.31); g.add(pg); pattes.push(pg);
+  });
+  if(o.queue){
+    var q = bt(W*.18, W*.18, L*o.queue, m2);
+    q.position.set(0, hp + H*.85, -L*(.5 + o.queue*.45));
+    q.rotation.x = .5; g.add(q);
+  }
+  g.userData.pattes = pattes;
+  return g;
+}
+function bois(g, y, z, w, c){          /* ramure de cervidé */
+  var m = matC(c);
+  [-1, 1].forEach(function(s){
+    var t = cy(.008, .012, w*1.7, m, 4);
+    t.position.set(s*w*.4, y + w*.85, z); t.rotation.z = s*.36; g.add(t);
+    for(var k = 0; k < 2; k++){
+      var b = cy(.006, .008, w*.8, m, 4);
+      b.position.set(s*(w*.4 + w*.33*(k+1)*.5), y + w*(.9 + k*.5), z);
+      b.rotation.z = s*1.0; g.add(b);
+    }
+  });
+}
+function oiseau(o){
+  var g = new THREE.Group();
+  var m = matC(o.c), m2 = matC(o.c2 || o.c);
+  var corps = new THREE.Mesh(new THREE.SphereGeometry(o.L*.5, 9, 6), m);
+  corps.scale.set(.55, .55, 1); g.add(corps);
+  var t = new THREE.Mesh(new THREE.SphereGeometry(o.L*.22, 8, 5), m);
+  t.position.set(0, o.L*.10, o.L*.44); g.add(t);
+  var be = cn(o.L*.08, o.L*.20, matC(o.bec || 0xE0A93C), 5);
+  be.position.set(0, o.L*.08, o.L*.60); be.rotation.x = Math.PI/2; g.add(be);
+  var ailes = [];
+  [-1, 1].forEach(function(s){
+    var ag = new THREE.Group();
+    /* Une aile fuselée, pas une planche ni un bâton : un tronc de cône couché,
+       large dans le sens de la corde et mince dans le sens de l'épaisseur. Le
+       rétrécissement doit se faire sur la corde — pas sur la hauteur, sinon
+       l'aile devient une tige. */
+    var a = cy(o.L*.42, o.L*.62, o.env*.52, m2, 3);
+    a.scale.set(1, 1, .22);
+    a.rotation.z = s*Math.PI/2; a.rotation.y = -.16;
+    a.position.set(s*o.env*.26, 0, 0); ag.add(a);
+    var pl = cy(o.L*.16, o.L*.40, o.env*.26, m2, 3);
+    pl.scale.set(1, 1, .20);
+    pl.rotation.z = s*Math.PI/2; pl.rotation.y = -.48;
+    pl.position.set(s*o.env*.62, 0, -o.L*.10); ag.add(pl);
+    ag.rotation.z = -s*.14;          /* dièdre */
+    g.add(ag); ailes.push(ag);
+  });
+  var qu = bt(o.L*.34, o.L*.05, o.L*.40, m2);
+  qu.position.z = -o.L*.58; g.add(qu);
+  g.userData.ailes = ailes;
+  return g;
+}
+function poisson(o){
+  var g = new THREE.Group();
+  var m = matC(o.c, o.rug === undefined ? .45 : o.rug);
+  var corps = new THREE.Mesh(new THREE.SphereGeometry(o.L*.5, 10, 7), m);
+  corps.scale.set(o.ep || .42, o.ht || .58, 1); g.add(corps);
+  var cg = new THREE.Group();
+  var cau = cn(o.L*(o.cq || .22), o.L*.30, m, 4);
+  cau.rotation.x = -Math.PI/2; cau.scale.set(.25, 1, 1);
+  cau.position.z = -o.L*.15; cg.add(cau);
+  /* la nageoire des cétacés est horizontale : c'est ce détail, plus que la
+     taille, qui fait qu'on lit une baleine et non un gros poisson */
+  if(o.flukes) cau.rotation.z = Math.PI/2;
+  cg.position.z = -o.L*.46; g.add(cg);
+  if(o.dorsale){
+    var d = cn(o.L*.12, o.L*.22, m, 3);
+    d.scale.set(.25, 1, 1); d.position.y = o.L*(o.ht || .58)*.5; g.add(d);
+  }
+  if(o.nageoires){
+    [-1, 1].forEach(function(s){
+      var n = cn(o.L*.10, o.L*.20, m, 3);
+      n.scale.set(.22, 1, 1); n.rotation.z = s*1.25;
+      n.position.set(s*o.L*(o.ep || .42)*.5, -o.L*.05, o.L*.10); g.add(n);
+    });
+  }
+  g.userData.caudale = cg;
+  return g;
+}
+
+/* ═══════════════ le bestiaire ═══════════════ */
+var FAIRE_B = {
+  cerf: function(){
+    var g = quadrupede({ c:0x9A6B42, c2:0x7A5334, L:.42, H:.17, W:.15, hp:.20,
+      cou:1.1, pench:.30, ty:1.9, tz:.16, oreilles:.34, queue:.16, croupe:1 });
+    bois(g, .56, .21, .13, 0x6E5638);
+    return g;
+  },
+  biche: function(){
+    return quadrupede({ c:0xA8794E, c2:0x8A6039, L:.38, H:.15, W:.13, hp:.18,
+      cou:1.0, pench:.34, ty:1.75, tz:.14, oreilles:.36, queue:.13, croupe:1 });
+  },
+  lapin: function(){
+    var g = quadrupede({ c:0xB8A897, c2:0x9C8C7B, L:.15, H:.10, W:.10, hp:.05,
+      cou:.2, pench:.1, ty:1.5, tz:.10, oreilles:1.1, queue:.06 });
+    var q = sp(.030, matC(0xF0EBE2), 7); q.position.set(0, .12, -.10); g.add(q);
+    return g;
+  },
+  mouton: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.20,.13,.86],[-.18,-.11,.92]].forEach(function(p, k){
+      var b = quadrupede({ c:0xE6E2D6, c2:0x8C8579, L:.24*p[2], H:.15*p[2],
+        W:.14*p[2], hp:.11*p[2], cou:.3, pench:.5, ty:1.25, tz:.10,
+        oreilles:.30, queue:.05 });
+      /* la laine : quelques boules qui débordent du corps */
+      for(var j = 0; j < 4; j++){
+        var l = new THREE.Mesh(new THREE.IcosahedronGeometry(.055*p[2], 0), matC(0xF2EFE7));
+        l.position.set((alea(k*7+j)-.5)*.10*p[2], .20*p[2] + (alea(k*5+j)-.5)*.04,
+          (j-1.5)*.06*p[2]); b.add(l);
+      }
+      b.position.set(p[0], 0, p[1]); b.rotation.y = alea(k*11)*6.28319; g.add(b);
+    });
+    g.userData.pattes = [];
+    g.children.forEach(function(b){
+      (b.userData.pattes || []).forEach(function(x){ g.userData.pattes.push(x); });
+    });
+    return g;
+  },
+  renard: function(){
+    var g = quadrupede({ c:0xC8703A, c2:0xE8E2D4, L:.26, H:.11, W:.10, hp:.11,
+      cou:.5, pench:.5, ty:1.35, tz:.14, oreilles:.55, queue:.42 });
+    return g;
+  },
+  sanglier: function(){
+    var g = quadrupede({ c:0x5A4A3E, c2:0x483B31, L:.30, H:.16, W:.15, hp:.11,
+      cou:.25, pench:.7, ty:1.15, tz:.14, oreilles:.22, queue:.10, croupe:1 });
+    [-1, 1].forEach(function(s){
+      var d = cn(.012, .06, matC(0xE8E2D4), 4);
+      d.position.set(s*.035, .215, .225); d.rotation.set(-1.1, 0, s*.3); g.add(d);
+    });
+    return g;
+  },
+  bouquetin: function(){
+    var g = quadrupede({ c:0x8B7B66, c2:0x6E6153, L:.30, H:.14, W:.12, hp:.17,
+      cou:.9, pench:.30, ty:1.75, tz:.14, oreilles:.26, queue:.08, croupe:1 });
+    [-1, 1].forEach(function(s){
+      for(var k = 0; k < 4; k++){
+        var c2 = cy(.014 - k*.002, .016 - k*.002, .07, matC(0x4E463B), 5);
+        c2.position.set(s*.035, .47 + k*.055, .175 - k*.045);
+        c2.rotation.x = .5 + k*.25; g.add(c2);
+      }
+    });
+    return g;
+  },
+  marmotte: function(){
+    return quadrupede({ c:0x9D8360, c2:0x7E6949, L:.14, H:.11, W:.11, hp:.04,
+      cou:.25, pench:.2, ty:1.45, tz:.08, oreilles:.22, queue:.14 });
+  },
+  renne: function(){
+    var g = quadrupede({ c:0x8A7A66, c2:0xD8D2C4, L:.42, H:.18, W:.16, hp:.20,
+      cou:1.0, pench:.36, ty:1.85, tz:.16, oreilles:.30, queue:.10, croupe:1 });
+    bois(g, .58, .22, .16, 0x6E6153);
+    return g;
+  },
+  loup: function(){
+    return quadrupede({ c:0x77736C, c2:0x5C5952, L:.32, H:.13, W:.12, hp:.15,
+      cou:.6, pench:.55, ty:1.45, tz:.16, oreilles:.42, queue:.34 });
+  },
+  ours: function(){
+    var g = quadrupede({ c:0xEDE9E0, c2:0xC4BEB2, L:.40, H:.22, W:.20, hp:.14,
+      cou:.35, pench:.6, ty:1.25, tz:.18, oreilles:.20, queue:.06, croupe:1 });
+    var mu = bt(.08, .06, .07, matC(0xC9C2B4));
+    mu.position.set(0, .40, .34); g.add(mu);
+    var ne = sp(.022, matC(0x2A2822), 6); ne.position.set(0, .415, .375); g.add(ne);
+    [-1, 1].forEach(function(s){
+      var oe = sp(.014, matC(0x2A2822), 5); oe.position.set(s*.045, .455, .315); g.add(oe);
+    });
+    return g;
+  },
+  manchots: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.14,.10,.85],[-.13,.08,.9],[.04,-.15,.8]].forEach(function(p, k){
+      var b = new THREE.Group();
+      var co = new THREE.Mesh(new THREE.SphereGeometry(.075*p[2], 9, 6), matC(0x2B3038));
+      co.scale.set(.85, 1.3, .8); co.position.y = .11*p[2]; b.add(co);
+      var ve = new THREE.Mesh(new THREE.SphereGeometry(.058*p[2], 8, 6), matC(0xF2F1EC));
+      ve.scale.set(.8, 1.25, .6); ve.position.set(0, .10*p[2], .030*p[2]); b.add(ve);
+      var t = sp(.048*p[2], matC(0x2B3038), 8); t.position.y = .215*p[2]; b.add(t);
+      var be = cn(.016*p[2], .045*p[2], matC(0xE0A93C), 4);
+      be.position.set(0, .205*p[2], .050*p[2]); be.rotation.x = Math.PI/2; b.add(be);
+      [-1, 1].forEach(function(s){
+        var a = bt(.016*p[2], .085*p[2], .035*p[2], matC(0x2B3038));
+        a.position.set(s*.062*p[2], .11*p[2], 0); a.rotation.z = s*.2; b.add(a);
+      });
+      var pi = bt(.055*p[2], .012*p[2], .055*p[2], matC(0xE0A93C));
+      pi.position.y = .006; b.add(pi);
+      b.position.set(p[0], 0, p[1]); b.rotation.y = alea(k*13)*6.28319; g.add(b);
+    });
+    return g;
+  },
+  phoque: function(){
+    var g = new THREE.Group();
+    var co = new THREE.Mesh(new THREE.SphereGeometry(.17, 10, 7), matC(0x8E9AA4));
+    co.scale.set(.55, .5, 1); co.position.y = .07; g.add(co);
+    var t = sp(.065, matC(0x8E9AA4), 8); t.position.set(0, .11, .16); g.add(t);
+    var mu = bt(.05, .04, .04, matC(0x707C86)); mu.position.set(0, .095, .205); g.add(mu);
+    [-1, 1].forEach(function(s){
+      var n = cn(.05, .11, matC(0x707C86), 3);
+      n.scale.set(.3, 1, 1); n.rotation.z = s*1.4;
+      n.position.set(s*.085, .045, .02); g.add(n);
+      var c2 = cn(.05, .10, matC(0x707C86), 3);
+      c2.scale.set(.3, 1, 1); c2.rotation.set(Math.PI/2, 0, s*.5);
+      c2.position.set(s*.03, .04, -.20); g.add(c2);
+    });
+    return g;
+  },
+  dromadaire: function(){
+    var g = quadrupede({ c:0xC8A472, c2:0xA88856, L:.36, H:.15, W:.14, hp:.24,
+      cou:1.4, pench:.18, ty:2.05, tz:.10, oreilles:.18, queue:.16 });
+    var bo = new THREE.Mesh(new THREE.SphereGeometry(.11, 9, 6), matC(0xC8A472));
+    bo.scale.set(.85, .8, 1.1); bo.position.set(0, .40, -.04); g.add(bo);
+    return g;
+  },
+  fennec: function(){
+    return quadrupede({ c:0xDCC79A, c2:0xF0E6CE, L:.17, H:.08, W:.08, hp:.08,
+      cou:.4, pench:.5, ty:1.4, tz:.10, oreilles:1.3, queue:.30 });
+  },
+  crabes: function(){
+    var g = new THREE.Group();
+    [[0,0,1],[.11,.08,.8],[-.10,.07,.75]].forEach(function(p, k){
+      var b = new THREE.Group();
+      var co = new THREE.Mesh(new THREE.SphereGeometry(.052*p[2], 8, 5), matC(0xC85A42));
+      co.scale.set(1.25, .55, 1); co.position.y = .035*p[2]; b.add(co);
+      [-1, 1].forEach(function(s){
+        var pi = bt(.030*p[2], .022*p[2], .022*p[2], matC(0xC85A42));
+        pi.position.set(s*.075*p[2], .038*p[2], .040*p[2]); pi.rotation.y = s*.5; b.add(pi);
+        for(var j = 0; j < 3; j++){
+          var pa = bt(.008*p[2], .008*p[2], .040*p[2], matC(0xA84A34));
+          pa.position.set(s*.055*p[2], .018*p[2], -.018*p[2]*j);
+          pa.rotation.y = s*(.4 + j*.3); b.add(pa);
+        }
+        var oe = sp(.010*p[2], matC(0x1E1E24), 5);
+        oe.position.set(s*.018*p[2], .062*p[2], .030*p[2]); b.add(oe);
+      });
+      b.position.set(p[0], 0, p[1]); b.rotation.y = alea(k*17)*6.28319; g.add(b);
+    });
+    return g;
+  },
+  mouettes: function(){
+    var g = new THREE.Group();
+    [[0,0,0,1],[.28,.14,.16,.8],[-.24,-.10,-.12,.85]].forEach(function(p, k){
+      var o = oiseau({ c:0xF2F2F0, c2:0xC9CED4, L:.16*p[3], env:.34*p[3], bec:0xE0A93C });
+      o.position.set(p[0], p[2], p[1]); g.add(o);
+    });
+    g.userData.ailes = [];
+    g.children.forEach(function(o){
+      (o.userData.ailes || []).forEach(function(a){ g.userData.ailes.push(a); });
+    });
+    return g;
+  },
+  aigle: function(){
+    var g = oiseau({ c:0x6B5540, c2:0x54422F, L:.24, env:.62, bec:0xE0B44C });
+    var t = sp(.055, matC(0xEDE9E0), 8); t.position.set(0, .026, .105); g.add(t);
+    return g;
+  },
+  poissons: function(){
+    var g = new THREE.Group();
+    for(var k = 0; k < 7; k++){
+      var f = poisson({ c:k % 3 ? 0xE0B24C : 0xD8724C, L:.11 + alea(k*7)*.05,
+        dorsale:1, nageoires:1 });
+      f.position.set((alea(k*11)-.5)*.30, (alea(k*13)-.5)*.10, (alea(k*17)-.5)*.30);
+      f.rotation.y = (alea(k*19)-.5)*.6; g.add(f);
+    }
+    return g;
+  },
+  dauphin: function(){
+    var g = poisson({ c:0x7E96AC, L:.42, ep:.38, ht:.46, dorsale:1, nageoires:1, cq:.28, flukes:1 });
+    var be = cn(.03, .10, matC(0x6E8AA0), 5);
+    be.rotation.x = Math.PI/2; be.position.z = .24; g.add(be);
+    return g;
+  },
+  baleine: function(){
+    var g = poisson({ c:0x6E8298, L:1.05, ep:.52, ht:.46, cq:.32, rug:.6, flukes:1 });
+    var ve = new THREE.Mesh(new THREE.SphereGeometry(.50, 10, 7), matC(0x8A98A4, .6));
+    ve.scale.set(.44, .22, .90); ve.position.y = -.07; g.add(ve);
+    for(var k = 0; k < 5; k++){
+      var s = bt(.34, .012, .012, matC(0x8A98A4, .6));
+      s.position.set(0, -.14, .12 - k*.07); g.add(s);
+    }
+    var ev = cn(.05, .10, matC(0x4A5A6B), 4);
+    ev.position.set(0, .13, .18); g.add(ev);
+    return g;
+  },
+  tortue: function(){
+    var g = new THREE.Group();
+    var ca = new THREE.Mesh(new THREE.SphereGeometry(.16, 10, 6, 0, 6.2832, 0, Math.PI/2),
+      matC(0x5E6E4A));
+    ca.scale.set(1.15, .55, 1); ca.position.y = .05; g.add(ca);
+    var t = sp(.052, matC(0x8A9464), 8); t.position.set(0, .06, .17); g.add(t);
+    var pattes = [];
+    [[-1,1],[1,1],[-1,-1],[1,-1]].forEach(function(s){
+      var pg = new THREE.Group();
+      var n = cn(.045, .13, matC(0x8A9464), 3);
+      n.scale.set(.3, 1, 1); n.rotation.z = s[0]*1.3; n.position.x = s[0]*.05;
+      pg.add(n); pg.position.set(s[0]*.13, .035, s[1]*.09); g.add(pg); pattes.push(pg);
+    });
+    g.userData.pattes = pattes;
+    g.scale.setScalar(.58);
+    return g;
+  }
+};
+
+/* ═══════════════ les créatures ═══════════════
+   Payées en éclats, donc rares, donc elles ont le droit d'être étranges. */
+var FAIRE_C = {
+  lumine: function(){
+    var g = new THREE.Group();
+    var cl = new THREE.Mesh(new THREE.SphereGeometry(.13, 12, 8, 0, 6.2832, 0, 2.0),
+      new THREE.MeshStandardMaterial({ color:C(0x9FD8F0), roughness:.3, metalness:0,
+        transparent:true, opacity:.72, side:THREE.DoubleSide }));
+    g.add(cl);
+    var h = sp(.23, lueur(0x8FD0FF, .17), 10); g.add(h);
+    var fils = [];
+    for(var k = 0; k < 7; k++){
+      var a = (k/7)*6.28319;
+      var f = cy(.006, .002, .30, matC(0xBFE6F8), 4);
+      f.position.set(Math.cos(a)*.07, -.17, Math.sin(a)*.07);
+      g.add(f); fils.push(f);
+    }
+    g.userData.fils = fils; g.userData.flotte = 1;
+    return g;
+  },
+  ploc: function(){
+    var g = new THREE.Group();
+    var co = new THREE.Mesh(new THREE.IcosahedronGeometry(.13, 1), matC(0x7FC08A));
+    co.scale.set(1, .85, 1); co.position.y = .13; g.add(co);
+    [-1, 1].forEach(function(s){
+      var oe = sp(.035, matC(0xF4F2EA), 7); oe.position.set(s*.055, .17, .10); g.add(oe);
+      var pu = sp(.016, matC(0x22262E), 6); pu.position.set(s*.058, .17, .125); g.add(pu);
+      var pi = bt(.05, .025, .07, matC(0x5FA06A)); pi.position.set(s*.07, .012, .02); g.add(pi);
+    });
+    g.userData.saute = 1;
+    return g;
+  },
+  longcou: function(){
+    var g = quadrupede({ c:0xD8BE7A, c2:0xB89A58, L:.34, H:.17, W:.14, hp:.30,
+      cou:2.6, pench:.10, ty:2.9, tz:.06, oreilles:.26, queue:.22 });
+    for(var k = 0; k < 6; k++){
+      var t = new THREE.Mesh(new THREE.IcosahedronGeometry(.032, 0), matC(0x9A7C46));
+      t.position.set((k % 2 ? .06 : -.05), .18 + k*.035, .10 - k*.05); g.add(t);
+    }
+    return g;
+  },
+  cristallin: function(){
+    var g = quadrupede({ c:0xA8C4E0, c2:0x86A6C8, L:.34, H:.14, W:.12, hp:.19,
+      cou:1.1, pench:.28, ty:1.85, tz:.14, oreilles:.30, queue:.12, croupe:1 });
+    var m = new THREE.MeshStandardMaterial({ color:C(0xCFE8FF), roughness:.15,
+      metalness:.1, transparent:true, opacity:.85, flatShading:true });
+    [-1, 1].forEach(function(s){
+      for(var k = 0; k < 3; k++){
+        var c2 = new THREE.Mesh(new THREE.ConeGeometry(.022 - k*.005, .13, 4), m);
+        c2.position.set(s*(.04 + k*.03), .54 + k*.05, .19 - k*.03);
+        c2.rotation.z = s*(.3 + k*.28); g.add(c2);
+      }
+    });
+    g.add(sp(.26, lueur(0x9FD8FF, .10), 9));
+    return g;
+  },
+  souffleur: function(){
+    var g = poisson({ c:0x8A6EA8, L:.70, ep:.44, ht:.50, cq:.30, rug:.5 });
+    [-1, 1].forEach(function(s){
+      var a = cn(.16, .40, matC(0xA88CC4), 3);
+      a.scale.set(.18, 1, 1); a.rotation.z = s*1.25;
+      a.position.set(s*.18, .03, .04); g.add(a);
+    });
+    g.add(sp(.42, lueur(0xC0A0E0, .09), 9));
+    g.userData.flotte = 1;
+    return g;
+  },
+  veilleur: function(){
+    var g = new THREE.Group();
+    var co = new THREE.Mesh(new THREE.IcosahedronGeometry(.20, 1), matC(0x6E6458));
+    co.scale.set(.9, 1.15, .8); co.position.y = .24; g.add(co);
+    [-1, 1].forEach(function(s){
+      var oe = sp(.055, lueur(0xFFD08A, .9), 8); oe.position.set(s*.075, .33, .15); g.add(oe);
+      var to = cn(.045, .10, matC(0x6E6458), 4);
+      to.position.set(s*.085, .44, -.02); to.rotation.z = s*.25; g.add(to);
+      var pa = bt(.055, .10, .07, matC(0x8A7E6E)); pa.position.set(s*.08, .05, .02); g.add(pa);
+    });
+    var be = cn(.030, .07, matC(0xE0B44C), 4);
+    be.position.set(0, .29, .18); be.rotation.x = Math.PI/2; g.add(be);
+    g.add(sp(.34, lueur(0xFFC880, .07), 9));
+    return g;
+  }
+};
+
+/* ═══════════════ catalogue ═══════════════ */
+var TERRE = ["plaine","desert","toundra","montagne","neige","banquise","plage"];
+var BETES_L = {
+  cerf:      { nom:"Un cerf",        ic:"🦌", prix:5, bio:["plaine","toundra"], req:"herbe", v:.15 },
+  biche:     { nom:"Des biches",     ic:"🦌", prix:4, bio:["plaine","toundra"], req:"herbe" },
+  lapin:     { nom:"Un lapin",       ic:"🐇", prix:3, bio:["plaine","toundra"], req:"herbe", saute:1, v:.17 },
+  mouton:    { nom:"Des moutons",    ic:"🐑", prix:4, bio:["plaine","toundra"], req:"herbe" },
+  renard:    { nom:"Un renard",      ic:"🦊", prix:4, bio:["plaine","toundra"], req:"herbe", v:.19 },
+  sanglier:  { nom:"Un sanglier",    ic:"🐗", prix:4, bio:["plaine"],           req:"herbe" },
+  bouquetin: { nom:"Un bouquetin",   ic:"🐐", prix:5, bio:["montagne","neige"], req:"relief" },
+  marmotte:  { nom:"Une marmotte",   ic:"🐿", prix:3, bio:["montagne","neige"], req:"relief", saute:1, v:.13 },
+  aigle:     { nom:"Un aigle",       ic:"🦅", prix:7, bio:["montagne","neige"], req:"relief", vol:1 },
+  renne:     { nom:"Un renne",       ic:"🦌", prix:5, bio:["toundra","neige"],  req:"climat" },
+  loup:      { nom:"Un loup",        ic:"🐺", prix:6, bio:["toundra","neige","montagne"], req:"climat", v:.21 },
+  manchots:  { nom:"Des manchots",   ic:"🐧", prix:4, bio:["banquise"],         req:"climat" },
+  ours:      { nom:"Un ours blanc",  ic:"🐻", prix:8, bio:["banquise","neige"], req:"climat", v:.10 },
+  phoque:    { nom:"Un phoque",      ic:"🦭", prix:5, bio:["banquise","plage"], req:"climat" },
+  dromadaire:{ nom:"Un dromadaire",  ic:"🐪", prix:6, bio:["desert"],           req:"climat" },
+  fennec:    { nom:"Un fennec",      ic:"🦊", prix:3, bio:["desert"],           req:"climat" },
+  crabes:    { nom:"Des crabes",     ic:"🦀", prix:2, bio:["plage"],            req:"eau" },
+  mouettes:  { nom:"Des mouettes",   ic:"🕊", prix:3, bio:["plage","ocean"],    req:"eau", vol:1 },
+  poissons:  { nom:"Un banc de poissons", ic:"🐟", prix:3, bio:["ocean"], req:"eau", nage:1, plonge:.07 },
+  dauphin:   { nom:"Un dauphin",     ic:"🐬", prix:7, bio:["ocean"],            req:"eau", nage:1, saut:1, plonge:.09, v:.26 },
+  tortue:    { nom:"Une tortue",     ic:"🐢", prix:4, bio:["plage","ocean"],    req:"eau", plonge:.04 },
+  baleine:   { nom:"Une baleine",    ic:"🐋", prix:10, bio:["ocean"],           req:"eau", nage:1, plonge:.10, v:.11 }
+};
+var ORDRE_B = ["cerf","biche","lapin","mouton","renard","sanglier",
+               "bouquetin","marmotte","aigle","renne","loup",
+               "manchots","ours","phoque","dromadaire","fennec",
+               "crabes","tortue","mouettes","poissons","dauphin","baleine"];
+var FAM_B = [["terre","Sur la terre ferme"], ["froid","Dans le froid"],
+             ["chaud","Dans le chaud"], ["mer","Au bord de l'eau et dedans"]];
+var OU_B = { cerf:"terre", biche:"terre", lapin:"terre", mouton:"terre", renard:"terre",
+  sanglier:"terre", bouquetin:"terre", marmotte:"terre", aigle:"terre",
+  renne:"froid", loup:"froid", manchots:"froid", ours:"froid", phoque:"froid",
+  dromadaire:"chaud", fennec:"chaud",
+  crabes:"mer", tortue:"mer", mouettes:"mer", poissons:"mer", dauphin:"mer", baleine:"mer" };
+
+var CREAT = {
+  ploc:      { nom:"Un ploc",        ic:"🟢", prix:1, bio:TERRE, saute:1, v:.16,
+               s:"Il saute. C'est tout ce qu'il fait, et il le fait bien." },
+  lumine:    { nom:"Une lumine",     ic:"🔵", prix:1, bio:TERRE.concat(["ocean"]), flotte:1, haut:.62,
+               s:"Elle dérive au-dessus du sol, sans jamais toucher terre" },
+  longcou:   { nom:"Un longcou",     ic:"🟡", prix:2, bio:["plaine","desert","toundra"],
+               s:"Il broute la cime de ce qui dépasse" },
+  cristallin:{ nom:"Un cristallin",  ic:"🔷", prix:2, bio:["neige","montagne","banquise"],
+               s:"Un cerf de glace, qui luit faiblement" },
+  veilleur:  { nom:"Un veilleur",    ic:"🟠", prix:3, bio:TERRE, v:.05,
+               s:"Il ne bouge presque pas et regarde très loin" },
+  souffleur: { nom:"Un souffleur",   ic:"🟣", prix:3, bio:TERRE.concat(["ocean"]), flotte:1, haut:1.15,
+               s:"Une baleine qui a choisi le ciel plutôt que la mer" }
+};
+var ORDRE_C = ["ploc","lumine","longcou","cristallin","veilleur","souffleur"];
+
+function defBete(k){ return BETES_L[k] || CREAT[k]; }
+function faireBete(k){ return (FAIRE_B[k] || FAIRE_C[k])(); }
+function estCreature(k){ return !!CREAT[k]; }
+
+/* ═══════════════ l'économie des éclats ═══════════════ */
+function depenseGra(){
+  var d = 0;
+  for(var i in M.betes)
+    (M.betes[i] || []).forEach(function(q){ if(CREAT[q.k]) d += CREAT[q.k].prix; });
+  return d;
+}
+function soldeGra(){ return gagne().gra - depenseGra(); }
+function depenseBetes(){
+  var d = 0;
+  for(var i in M.betes)
+    (M.betes[i] || []).forEach(function(q){ if(BETES_L[q.k]) d += BETES_L[q.k].prix; });
+  return d;
+}
+
+/* ═══════════════ poser, retirer ═══════════════ */
+var betesG = [], betesVives = [], selBete = null;
+function poserBetes(){
+  betesG.forEach(function(g){ monde.remove(g); });
+  betesG = [];
+  Object.keys(M.betes).forEach(function(ks){
+    var i = parseInt(ks, 10), L = M.betes[ks] || [];
+    L.forEach(function(q, n){
+      if(!defBete(q.k)) return;
+      var g = faireBete(q.k);
+      g.userData.cell = i; g.userData.idx = n; g.userData.type = "bete"; g.userData.k = q.k;
+      reveiller(g, q);
+      g.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      monde.add(g); betesG.push(g);
+    });
+  });
+  majBetesVives();
+}
+/* ═══════════════ où va la bête ═══════════════
+   Elle ne reste plus dans sa case : elle a un domaine — sa case et les deux
+   anneaux autour — et n'en sort pas. C'est délibéré. Un animal qui s'éloignerait
+   sans limite cesserait d'être « celui que j'ai posé près du village », et le
+   patient perdrait le lien entre son geste et ce qu'il voit. Deux anneaux, cela
+   lui laisse de quoi vraiment voyager tout en restant chez lui — et cela tient
+   dans le diorama, qui en couvre trois. */
+function capVers(i, j){
+  var rep = repere(i), q = new THREE.Vector3().fromArray(CELLS[j].c);
+  var pr = q.clone().sub(rep.up.clone().multiplyScalar(q.dot(rep.up)));
+  return Math.atan2(pr.dot(rep.nord), pr.dot(rep.est));
+}
+function ecartAngle(a, b){ return ((a - b + Math.PI*3) % (Math.PI*2)) - Math.PI; }
+/* Orienter sans passer par les repères de case : ceux-ci changent d'une case à
+   l'autre, et une bête qui traverse pivoterait d'un coup au passage. On donne
+   directement la verticale et la direction du regard. */
+function orienterVers(g, p, fwd){
+  var n = p.clone().normalize();
+  var f = fwd.clone().sub(n.clone().multiplyScalar(fwd.dot(n)));
+  if(f.lengthSq() < 1e-9){ g.quaternion.setFromUnitVectors(UP, n); return; }
+  f.normalize();
+  var r = new THREE.Vector3().crossVectors(n, f);
+  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r, n, f));
+  fwd.copy(f);
+}
+function reveiller(g, q){
+  var u = g.userData, d = defBete(q.k);
+  u.a0 = q.a || 0; u.d0 = q.d || 0;
+  u.cv = u.cell; u.a = u.a0; u.d = u.d0;
+  u.graine = u.cell * 131 + u.idx * 17 + 3; u.n = 1;
+  u.marche = 0; u.pause = 0; u.cross = null; u.migre = -1;
+  u.vol = d.vol; u.nage = d.nage; u.saut = d.saut;
+  u.flotte = d.flotte; u.saute = d.saute;
+  u.haut = d.haut || .45;            /* hauteur de flottaison */
+  u.plonge = d.plonge || 0;          /* de combien le corps s'enfonce */
+  u.vitesse = d.v || (u.vol ? .38 : (u.nage ? .17 : .13));
+  /* le domaine : les cases habitables à deux pas de la maison */
+  u.zone = autourDe(u.cell, 2).filter(function(v){ return d.bio.indexOf(bioDe(v)) >= 0; });
+  if(u.zone.indexOf(u.cell) < 0) u.zone.push(u.cell);
+  var rep = repere(u.cell), r0 = q.r || 0;
+  u.fwd = rep.est.clone().multiplyScalar(Math.cos(r0))
+    .add(rep.nord.clone().multiplyScalar(Math.sin(r0)));
+  choisirBut(g);
+  placerBete(g);
+}
+function choisirBut(g){
+  var u = g.userData;
+  u.pause = 0;
+  var vois = (VOISINS && VOISINS[u.cv] ? VOISINS[u.cv] : []).filter(function(v){
+    return u.zone.indexOf(v) >= 0;
+  });
+  /* une fois sur trois, on va voir à côté */
+  if(vois.length && alea(u.graine + u.n) < (u.vol || u.nage ? .55 : .36)){
+    u.migre = vois[Math.floor(alea(u.graine + u.n*3) * vois.length) % vois.length];
+    u.ca = capVers(u.cv, u.migre); u.cd = .90;
+  } else {
+    u.migre = -1;
+    u.ca = alea(u.graine + u.n*5) * 6.28319;
+    u.cd = .05 + alea(u.graine + u.n*7) * .48;
+  }
+  u.n++;
+}
+/* Le passage d'une case à l'autre. Quand il y a une marche, la bête la franchit
+   d'un bond : c'est le seul moment où son déplacement se voit vraiment, et
+   c'est pour cela qu'il ne faut surtout pas l'escamoter. */
+var NSAUTS = 0;
+function lancerSaut(g){
+  NSAUTS++;
+  var u = g.userData, B = u.migre;
+  var de = g.position.clone();
+  var aB = capVers(B, u.cv);
+  var vers = pointCell(B, aB, .90, M.glob);
+  if(u.plonge) vers.addScaledVector(vers.clone().normalize(), -u.plonge);
+  var dh = Math.abs(vers.length() - de.length());
+  /* même à plat le passage se voit : la bête enjambe la limite. Ce petit saut
+     est ce qui distingue « elle a changé de case » de « elle a glissé ». */
+  u.cross = { t:0, dur:(u.vol || u.nage || u.flotte) ? .9 + dh : .46 + dh * .42,
+              de:de, vers:vers, dh:dh,
+              h:(u.vol || u.nage || u.flotte) ? 0 : (.085 + dh * .55),
+              cell:B, a:aB };
+  u.migre = -1;
+}
+function placerBete(g){
+  var u = g.userData;
+  var p = pointCell(u.cv, u.a, u.d, M.glob);
+  var n = p.clone().normalize();
+  if(u.vol) p.addScaledVector(n, .85 + .25 * Math.sin(u.marche * .7));
+  else if(u.flotte) p.addScaledVector(n, u.haut + .08 * Math.sin(u.marche * 1.6));
+  else if(u.plonge) p.addScaledVector(n, -u.plonge);
+  g.position.copy(p);
+  orienterVers(g, p, u.fwd);
+}
+function majBetesVives(){
+  var avant = betesVives;
+  betesVives = (patchCells && patchCells.length)
+    ? betesG.filter(function(g){ return patchCells.indexOf(g.userData.cell) >= 0; })
+    : [];
+  /* une bête qu'on cesse d'animer en plein saut resterait suspendue en l'air :
+     on la fait atterrir tout de suite */
+  avant.forEach(function(g){
+    var u = g.userData;
+    if(u.cross && betesVives.indexOf(g) < 0){
+      u.cv = u.cross.cell; u.a = u.cross.a; u.d = .90; u.cross = null;
+      choisirBut(g); placerBete(g);
+    }
+  });
+}
+function betesOuvertes(){
+  return ORDRE_B.filter(function(k){
+    var o = BETES_L[k]; return !o.req || !!M.glob[o.req];
+  });
+}
+function creaturesOuvertes(){ return ORDRE_C.slice(); }
+function choisirBete(k){
+  var o = defBete(k), cre = estCreature(k);
+  if(selBete === k){ selBete = null; remplirListe(); dire(""); return; }
+  var s = cre ? soldeGra() : solde();
+  if(o.prix > s){
+    dire("Il manque " + (o.prix - s) + (cre ? " éclat" : " cristal")
+      + ((o.prix - s) > 1 ? "s" : "") + " pour " + o.nom.toLowerCase() + ".");
+    return;
+  }
+  selBete = k; selObj = null; selDec = null; outil = null; selSol = null;
+  remplirListe();
+  dire("Touche " + (cre ? "une case" : "une case de "
+    + o.bio.map(function(b){ return NOM_BIOME[b]; }).join(" ou de ")) + " pour l'y installer.");
+}
+function poserBete(i, k, ad){
+  var o = defBete(k), cre = estCreature(k);
+  if(o.bio.indexOf(bioDe(i)) < 0){
+    dire("Il ne vivrait pas sur " + ART[bioDe(i)] + " — il lui faut "
+      + o.bio.map(function(b){ return ART[b]; }).join(", ") + ".");
+    return;
+  }
+  var s = cre ? soldeGra() : solde();
+  if(o.prix > s){ dire("Il manque " + (o.prix - s) + (cre ? " éclats." : " cristaux.")); return; }
+  if(!M.betes[i]) M.betes[i] = [];
+  if(M.betes[i].length >= 4){ dire("Il y a déjà du monde sur cette case."); return; }
+  M.betes[i].push({ k:k, a:ad.a, d:Math.min(.52, ad.d),
+    r: alea(i*17 + M.betes[i].length) * 6.28319 });
+  sauver(); poserBetes(); majSolde(); remplirListe();
+  dire(o.nom + " s'installe" + (cre ? "" : " sur " + ART[bioDe(i)]) + ".");
+}
+function retirerBete(g){
+  var u = g.userData, L = M.betes[u.cell];
+  if(!L) return;
+  L.splice(u.idx, 1);
+  if(!L.length) delete M.betes[u.cell];
+  selSol = null; armeDeplacer = false;
+  sauver(); poserBetes(); majSolde(); remplirListe();
+  dire("Il est reparti, les cristaux sont revenus.");
+}
+
+/* ═══════════════ ça bouge ═══════════════
+   Une bête choisit un but — dans sa case ou chez la voisine — s'y rend à
+   vitesse constante, s'arrête parfois, franchit les marches d'un bond. Rien de
+   plus : c'est la lenteur, les pauses et le bond qui font croire au vivant,
+   bien plus que la complexité du trajet. */
+function animerBetes(dt){
+  for(var n = 0; n < betesVives.length; n++){
+    var g = betesVives[n], u = g.userData;
+
+    /* ── la traversée ── */
+    if(u.cross){
+      var cr = u.cross;
+      if(!cr.t) g.scale.set(1, 1, 1);
+      cr.t += dt;
+      var q = Math.min(1, cr.t / cr.dur), e = q*q*(3 - 2*q);
+      var p = cr.de.clone().lerp(cr.vers, e);
+      var nn = p.clone().normalize();
+      var arc = 4 * cr.h * q * (1 - q);
+      p.addScaledVector(nn, arc);
+      g.position.copy(p);
+      u.fwd.copy(cr.vers).sub(cr.de);
+      orienterVers(g, p, u.fwd);
+      if(cr.h > .01){
+        /* elle pique du nez en retombant, et tend les pattes en l'air */
+        g.rotateX(-cr.h * 1.1 * (1 - 2*q));
+        if(u.pattes) for(var j0 = 0; j0 < u.pattes.length; j0++)
+          u.pattes[j0].rotation.x = (j0 < 2 ? -.55 : .55) * (1 - Math.abs(1 - 2*q));
+      }
+      if(u.ailes) for(var w0 = 0; w0 < u.ailes.length; w0++)
+        u.ailes[w0].rotation.z = (w0 % 2 ? 1 : -1) * (.22 + .40 * Math.sin(cr.t * 9));
+      u.marche += dt * 4;
+      if(q >= 1){
+        u.cv = cr.cell; u.a = cr.a; u.d = .90; u.cross = null;
+        choisirBut(g);
+      }
+      continue;
+    }
+
+    /* ── le vol : un cercle patient, qui se déplace quand l'oiseau change de case ── */
+    if(u.vol){
+      u.marche += dt * u.vitesse * 2.4;
+      u.a += dt * u.vitesse * 1.5;
+      u.d = Math.max(.12, Math.min(.62, u.d + (( .40 ) - u.d) * dt));
+      placerBete(g);
+      var tang = new THREE.Vector3().crossVectors(g.position.clone().normalize(), u.fwd);
+      g.rotateZ(.34 * Math.sin(u.marche * .5 + 1));
+      if(u.ailes) for(var w = 0; w < u.ailes.length; w++)
+        u.ailes[w].rotation.z = (w % 2 ? 1 : -1) * (.22 + .34 * Math.sin(u.marche * 2.4 + w));
+      u.t = (u.t || 0) + dt;
+      if(u.t > 9){ u.t = 0; u.migre = -1; choisirBut(g); if(u.migre >= 0) lancerSaut(g); }
+      continue;
+    }
+
+    /* ── marche, nage, dérive ── */
+    var avant = g.position.clone();
+    if(u.pause > 0){
+      u.pause -= dt;
+      if(u.pause <= 0) choisirBut(g);
+      if(u.pattes) for(var j1 = 0; j1 < u.pattes.length; j1++)
+        u.pattes[j1].rotation.x *= .90;
+      if(u.flotte || u.nage){ u.marche += dt * .8; placerBete(g); }
+      continue;
+    }
+    var da = ecartAngle(u.ca, u.a), dd = u.cd - u.d;
+    var rayon = Math.max(.12, u.d) * RCELL;
+    var dm = Math.sqrt(da*da*rayon*rayon + dd*dd*RCELL*RCELL);
+    var pas = dm > 1e-5 ? (u.vitesse * dt) / dm : 1;
+    if(pas >= 1){
+      u.a = u.ca; u.d = u.cd;
+      placerBete(g);
+      if(u.migre >= 0) lancerSaut(g);
+      else { u.pause = 1.5 + alea(u.graine + u.n*11) * 5; u.n++; }
+    } else {
+      u.a += da * pas; u.d += dd * pas;
+      u.marche += dt * (u.saute ? 3.4 : 6.2);
+      placerBete(g);
+    }
+
+    /* le regard suit le déplacement réel, lissé : une bête ne pivote pas sur place */
+    var dv = g.position.clone().sub(avant);
+    if(dv.lengthSq() > 1e-9){
+      u.fwd.lerp(dv.normalize(), Math.min(1, dt * 3.2));
+      orienterVers(g, g.position, u.fwd);
+    }
+
+    if(u.saute){
+      /* ce qui avance par bonds : lapin, marmotte, ploc */
+      var h = Math.abs(Math.sin(u.marche * 1.9)) * .12;
+      g.position.addScaledVector(g.position.clone().normalize(), h);
+      g.scale.set(1 + h*.6, 1 - h*.7, 1 + h*.6);
+      continue;
+    }
+    if(u.nage){
+      if(g.userData.caudale) g.userData.caudale.rotation.y = .32 * Math.sin(u.marche * 1.1);
+      if(u.saut){
+        var ph = (u.marche * .22) % 6.28319;
+        if(ph < 2.2){
+          var s2 = Math.sin(ph / 2.2 * Math.PI);
+          g.position.addScaledVector(g.position.clone().normalize(), s2 * .30);
+          g.rotateX(-Math.cos(ph / 2.2 * Math.PI) * .6);
+        }
+      }
+      continue;
+    }
+    if(u.pattes){
+      for(var j = 0; j < u.pattes.length; j++)
+        /* l'allure diagonale, et le décompte reprend à chaque bête d'un
+           troupeau : sans le modulo, douze pattes marcheraient en vrac */
+        u.pattes[j].rotation.x = .30 * Math.sin(u.marche * 1.3
+          + (j % 2 ? 0 : Math.PI) + ((j % 4) < 2 ? 0 : Math.PI));
+    }
+    if(u.fils){
+      for(var f = 0; f < u.fils.length; f++)
+        u.fils[f].rotation.x = .25 * Math.sin(u.marche * 1.4 + f);
+    }
+  }
+}
+
+/* ═══════════════ encodage compact ═══════════════
+   Chaque nombre en base 36, chaque section séparée par un point. Le JSON brut
+   d'une planète bien remplie fait une dizaine de milliers de caractères ; cette
+   forme-ci en fait deux mille, ce qui est la différence entre un courriel
+   utilisable et un courriel qu'on renonce à envoyer. */
+var B36 = function(n){ return Math.round(n).toString(36); };
+var D36 = function(t){ return parseInt(t, 36) || 0; };
+var SOLS_C = ["ocean","banquise","plage","plaine","desert","toundra","montagne","neige"];
+
+function encAngle(a){ return B36(Math.round(((a % 6.28319) + 6.28319) % 6.28319 * 100)); }
+function decAngle(t){ return D36(t) / 100; }
+
+function texteDe(M2){
+  function liste(obj, ordre, avecPos){
+    var out = [];
+    Object.keys(obj || {}).forEach(function(ks){
+      var L = obj[ks];
+      if(!L.forEach) L = [L];
+      L.forEach(function(q){
+        var k = ordre.indexOf(q.k === undefined ? q : q.k);
+        if(k < 0) return;
+        out.push(avecPos
+          ? [B36(ks), B36(k), encAngle(q.a || 0), B36((q.d || 0) * 100),
+             encAngle(q.r || 0)].join("-")
+          : [B36(ks), B36(k)].join("-"));
+      });
+    });
+    return out.join("_");
+  }
+  var bits = 0;
+  TERRA.forEach(function(t, i){ if(M2.glob[t.id]) bits |= (1 << i); });
+  var cells = [];
+  Object.keys(M2.cells || {}).forEach(function(i){
+    var k = ORDRE_OBJ.indexOf(M2.cells[i]);
+    if(k >= 0) cells.push(B36(i) + "-" + B36(k));
+  });
+  var pos = [];
+  Object.keys(M2.pos || {}).forEach(function(i){
+    var q = M2.pos[i];
+    pos.push([B36(i), encAngle(q.a || 0), B36((q.d || 0) * 100), encAngle(q.r || 0)].join("-"));
+  });
+  var terre = [];
+  Object.keys(M2.terre || {}).forEach(function(i){
+    var t = M2.terre[i];
+    terre.push([B36(i), t.b ? B36(SOLS_C.indexOf(t.b)) : "z",
+      B36((t.h || 0) + 4)].join("-"));
+  });
+  var parts = [
+    "MP1",
+    encodeURIComponent(M2.nom || "").replace(/\./g, "%2E"),
+    B36(M2.graine || 0),
+    B36(M2.niv || 3),
+    B36(bits),
+    cells.join("_"),
+    pos.join("_"),
+    liste(M2.decors, ORDRE_DEC, 1),
+    liste(M2.betes, ORDRE_B.concat(ORDRE_C), 1),
+    terre.join("_"),
+    B36(M2.gag || 0)
+  ];
+  var corps = parts.join(".");
+  /* une somme de contrôle : un bloc tronqué par un logiciel de messagerie est
+     refusé au lieu de produire une planète à moitié juste */
+  var som = 0;
+  for(var i = 0; i < corps.length; i++) som = (som * 31 + corps.charCodeAt(i)) % 1679615;
+  return corps + "." + B36(som);
+}
+
+function lireTexte(txt){
+  var t = (txt || "").replace(/\s+/g, "");
+  if(t.indexOf("MP1.") !== 0) return null;
+  var i = t.lastIndexOf(".");
+  if(i < 0) return null;
+  var corps = t.slice(0, i), som = t.slice(i + 1), s2 = 0;
+  for(var k = 0; k < corps.length; k++) s2 = (s2 * 31 + corps.charCodeAt(k)) % 1679615;
+  if(B36(s2) !== som) return null;
+  var p = corps.split(".");
+  if(p.length < 10) return null;
+  var M2 = { nom:decodeURIComponent(p[1] || "") || "Ma planète",
+    graine:D36(p[2]), niv:Math.max(3, Math.min(5, D36(p[3]) || 3)),
+    glob:{}, cells:{}, pos:{}, decors:{}, betes:{}, terre:{} };
+  var bits = D36(p[4]);
+  TERRA.forEach(function(x, n){ if(bits & (1 << n)) M2.glob[x.id] = 1; });
+  (p[5] ? p[5].split("_") : []).forEach(function(e){
+    var f = e.split("-"); var o = ORDRE_OBJ[D36(f[1])];
+    if(o) M2.cells[D36(f[0])] = o;
+  });
+  (p[6] ? p[6].split("_") : []).forEach(function(e){
+    var f = e.split("-");
+    M2.pos[D36(f[0])] = { a:decAngle(f[1]), d:D36(f[2])/100, r:decAngle(f[3]) };
+  });
+  function relire(txt2, ordre, cible){
+    (txt2 ? txt2.split("_") : []).forEach(function(e){
+      var f = e.split("-"), k = ordre[D36(f[1])];
+      if(!k) return;
+      var i2 = D36(f[0]);
+      (cible[i2] = cible[i2] || []).push({ k:k, a:decAngle(f[2]),
+        d:D36(f[3])/100, r:decAngle(f[4]) });
+    });
+  }
+  relire(p[7], ORDRE_DEC, M2.decors);
+  relire(p[8], ORDRE_B.concat(ORDRE_C), M2.betes);
+  (p[9] ? p[9].split("_") : []).forEach(function(e){
+    var f = e.split("-"), o = {};
+    if(f[1] !== "z") o.b = SOLS_C[D36(f[1])];
+    var h = D36(f[2]) - 4;
+    if(h) o.h = h;
+    if(o.b || o.h) M2.terre[D36(f[0])] = o;
+  });
+  M2.gag = D36(p[10] || "0");
+  return M2;
+}
+
+/* ═══════════════ changer de code, sauver, reprendre ═══════════════ */
+function chargerCode(c){
+  c = (c || "").replace(/[^A-Za-z0-9 _-]/g, "").trim().slice(0, 24) || "essai";
+  CODE = c; CODE_LOG = c;
+  try{ localStorage.setItem(K_CODE, CODE); }catch(e){}
+  adopter(lireTout()[CODE] || { nom:"Ma planète", graine: hash(CODE) % 100000,
+    niv:3, glob:{}, cells:{}, pos:{}, decors:{}, betes:{}, terre:{} });
+  if($("pCode")) $("pCode").textContent = CODE;
+}
+/* Remplacer la planète courante par une autre, et tout reconstruire. Un seul
+   chemin, qu'on arrive par un code ou par un bloc de sauvegarde. */
+function adopter(M2){
+  M = M2;
+  if(!M.pos) M.pos = {}; if(!M.decors) M.decors = {};
+  if(!M.terre) M.terre = {}; if(!M.betes) M.betes = {};
+  if(!M.niv) M.niv = 3;
+  GRAINE = M.graine;
+  if(VUE !== "orbite"){ retirerPatch(); semerRien(); VUE = "orbite"; TR = null;
+    SOL_CELL = -1; renderer.shadowMap.enabled = false; soleil.castShadow = false;
+    soleilOrbite(); ambiance(0); }
+  Object.keys(objets).forEach(function(i){ monde.remove(objets[i]); });
+  objets = {}; detailles = [];
+  selObj = null; selDec = null; selBete = null; selSol = null; outil = null; presse = null;
+  COINS3 = null; couleursSales = true;
+  preparerMonde();
+  construireGlobe(M.glob); majDecor();
+  Object.keys(M.cells).forEach(function(i){ poser(parseInt(i, 10), M.cells[i], true); });
+  poserDecors(); poserBetes();
+  majSolde(); majPanneau(); dire("");
+}
+/* Effacer pour de bon : la ligne du patient disparaît du stockage, et l'écran
+   repart sur une planète vierge. Rien n'est conservé ailleurs — c'est justement
+   ce qu'on promet dans la note d'information. */
+function effacerPlanete(){
+  try{
+    var t = lireTout();
+    delete t[CODE];
+    localStorage.setItem(K_MONDE, JSON.stringify(t));
+  }catch(e){}
+  adopter({ nom:"Ma planète", graine: hash(CODE) % 100000, niv:3,
+    glob:{}, cells:{}, pos:{}, decors:{}, betes:{}, terre:{} });
+  try{ if(window.parent && window.parent !== window && window.parent.ORBITE
+        && window.parent.ORBITE.miroirMonde) window.parent.ORBITE.miroirMonde(); }catch(e){}
+}
+function annoncerSauvegarde(){
+  var e = $("sauve");
+  if(!e) return;
+  e.classList.add("vu");
+  clearTimeout(annoncerSauvegarde._t);
+  annoncerSauvegarde._t = setTimeout(function(){ e.classList.remove("vu"); }, 1400);
+}
+
+/* ═══════════════ l'atelier ═══════════════ */
+var onglet = "terra", selObj = null;
+
+function majSolde(){
+  var g = gagne(), s = g.cri - depense();
+  $("pCri").innerHTML = "◆ <b>" + s + "</b>";
+  var sg = soldeGra();
+  $("pGra").hidden = !g.gra;
+  $("pGra").innerHTML = "✦ <b>" + sg + "</b>";
+  $("soldeTxt").textContent = s + (Math.abs(s) > 1 ? " cristaux" : " cristal")
+    + (g.gra ? " · " + sg + (Math.abs(sg) > 1 ? " éclats" : " éclat") : "")
+    + " · " + g.n + (g.n > 1 ? " passages" : " passage");
+  $("pNom").textContent = M.nom;
+}
+function dispo(id){ return !!M.glob[id]; }
+function objetsOuverts(){
+  return ORDRE_OBJ.filter(function(k){ var o = OBJETS[k]; return !o.req || dispo(o.req); });
+}
+function ligne(cls, ic, nom, sous, droite){
+  return '<button class="art ' + cls + '"><span class="ic">' + ic + '</span>'
+    + '<span class="tx"><span class="n">' + nom + '</span><span class="s">' + sous + '</span></span>'
+    + '<span class="pr">' + droite + '</span></button>';
+}
+function remplirListe(){
+  var L = $("liste"), s = solde(), out = "";
+  if(onglet === "sol"){
+    var od = decorsOuverts(), liste = [];
+    FAMILLES.forEach(function(f){
+      var dedans = od.filter(function(k){ return DECORS[k].fam === f[0]; });
+      if(!dedans.length) return;
+      out += '<div class="grp">' + f[1] + '</div>';
+      dedans.forEach(function(k){
+        var o = DECORS[k];
+        liste.push(k);
+        out += ligne((selDec === k ? "on " : "") + (o.prix > s && selDec !== k ? "cher" : ""),
+          o.ic, o.nom, "à poser librement", "◆ " + o.prix);
+      });
+    });
+    if(!liste.length) out += '<p class="vide">Transforme d\'abord la planète : '
+      + 'la végétation, l\'eau et le climat ouvrent chacun leurs décors.</p>';
+    else out += '<p class="vide">Choisis un décor, puis touche le sol à l\'endroit exact. '
+      + 'Touche ce qui est déjà posé pour le tourner, le déplacer ou le reprendre — '
+      + 'tourner et déplacer ne coûtent rien.</p>';
+    L.innerHTML = out;
+    Array.prototype.forEach.call(L.querySelectorAll(".art"), function(b, i){
+      b.addEventListener("click", function(){ choisirDecor(liste[i]); });
+    });
+    return;
+  }
+  if(onglet === "betes"){
+    var ob = betesOuvertes(), listeB = [];
+    var g2 = gagne();
+    FAM_B.forEach(function(f){
+      var dedans = ob.filter(function(k){ return OU_B[k] === f[0]; });
+      if(!dedans.length) return;
+      out += '<div class="grp">' + f[1] + '</div>';
+      dedans.forEach(function(k){
+        var o = BETES_L[k]; listeB.push(k);
+        out += ligne((selBete === k ? "on " : "") + (o.prix > s && selBete !== k ? "cher" : ""),
+          o.ic, o.nom, o.bio.map(function(b){ return NOM_BIOME[b]; }).join(", "),
+          "◆ " + o.prix);
+      });
+    });
+    if(!listeB.length) out += '<p class="vide">Rien ne peut encore vivre ici. '
+      + 'L\'eau amène les poissons et les oiseaux de mer, la végétation les herbivores, '
+      + 'le relief la montagne, le climat le froid et le désert.</p>';
+    /* les créatures : la monnaie rare, un passage sur cinq */
+    var sg = soldeGra();
+    out += '<div class="grp">Créatures · éclats ✦</div>';
+    if(!g2.gra) out += '<p class="vide">Les éclats viennent tous les cinq passages. '
+      + 'Il t\'en faut au moins un pour inviter une créature.</p>';
+    ORDRE_C.forEach(function(k){
+      var o = CREAT[k]; listeB.push(k);
+      out += ligne((selBete === k ? "on " : "") + (o.prix > sg && selBete !== k ? "cher" : ""),
+        o.ic, o.nom, o.s, "✦ " + o.prix);
+    });
+    out += '<p class="vide">Un animal se pose où tu veux et se promène tout seul. '
+      + 'Touche-le pour le déplacer ou le laisser repartir — les cristaux reviennent '
+      + 'en entier.</p>';
+    L.innerHTML = out;
+    Array.prototype.forEach.call(L.querySelectorAll(".art"), function(b, i){
+      b.addEventListener("click", function(){ choisirBete(listeB[i]); });
+    });
+    return;
+  }
+  if(onglet === "terre"){
+    var acts = [];
+    if(M.glob.relief){
+      out += '<div class="grp">Sculpter</div>';
+      out += ligne(outil === "haut" ? "on" : "", "⬆", "Soulever la case",
+        "d\'un cran, jusqu\'à quatre", "libre"); acts.push("haut");
+      out += ligne(outil === "bas" ? "on" : "", "⬇", "Enfoncer la case",
+        "d\'un cran, jusqu\'à trois", "libre"); acts.push("bas");
+    }
+    var so = solsOuverts();
+    if(so.length){
+      out += '<div class="grp">Recouvrir la case</div>';
+      so.forEach(function(q){
+        out += ligne(outil === q.id ? "on" : "", q.ic, q.nom,
+          "à la place de ce qu\'il y a", "libre");
+        acts.push(q.id);
+      });
+      out += '<div class="grp">Déplacer un bout de terre</div>';
+      out += ligne((outil === "copier" || outil === "coller") ? "on" : "", "⧉",
+        presse && outil === "coller" ? "Poser ce sol" : "Prendre un sol",
+        presse && outil === "coller" ? NOM_BIOME[presse.b] + " en main" : "puis le poser ailleurs",
+        "libre");
+      acts.push("copier");
+    }
+    if(!acts.length) out += '<p class="vide">Le terrain se retouche une fois la planète '
+      + 'transformée : l\'eau ouvre l\'eau et le sable, la végétation ouvre l\'herbe, '
+      + 'le relief ouvre la roche et les crans d\'élévation.</p>';
+    else out += '<p class="vide">Remodeler le sol ne coûte aucun cristal : on peut se '
+      + 'tromper et recommencer. Ce qui était posé sur une case devenue eau revient '
+      + 'en entier.</p>';
+    L.innerHTML = out;
+    Array.prototype.forEach.call(L.querySelectorAll(".art"), function(b, i){
+      b.addEventListener("click", function(){ choisirOutil(acts[i]); });
+    });
+    return;
+  }
+  if(onglet === "terra"){
+    /* Rendre la règle visible : un système de jetons dont on ne voit pas la
+       contingence ne renforce rien. Le patient doit pouvoir lire d'où vient
+       chaque cristal. */
+    var g3 = gagne();
+    out += '<div class="grp">D\'où viennent tes cristaux</div>';
+    out += '<p class="vide releve">'
+      + '<span><b>' + GAIN.depart + '</b> pour commencer</span>'
+      + '<span><b>' + GAIN.parJour + '</b> par jour où tu viens · ' + g3.jours
+        + ' jour' + (g3.jours > 1 ? 's' : '') + ' → <b>' + (g3.jours*GAIN.parJour) + '</b></span>'
+      + '<span><b>' + GAIN.parJeu + '</b> par jeu terminé · ' + g3.jeux
+        + ' jeu' + (g3.jeux > 1 ? 'x' : '') + ' → <b>' + (g3.jeux*GAIN.parJeu) + '</b></span>'
+      + '<span><b>' + GAIN.parRecord + '</b> pour un record · ' + g3.records
+        + ' → <b>' + (g3.records*GAIN.parRecord) + '</b></span>'
+      + '<span>dépensé jusqu\'ici · <b>' + depense() + '</b></span>'
+      + '<span class="ec">✦ un éclat tous les ' + GAIN.jourEclat + ' jours de venue · '
+        + 'tu en as <b>' + soldeGra() + '</b></span>'
+      + '</p>';
+    out += '<div class="grp">Transformer la planète entière</div>';
+    TERRA.forEach(function(t){
+      var pris = !!M.glob[t.id];
+      out += ligne(pris ? "pris" : (t.prix > s ? "cher" : ""), t.ic, t.nom, t.s,
+        pris ? "fait" : ("◆ " + t.prix));
+    });
+    out += '<p class="vide">Chaque transformation change la planète d\'un seul coup. '
+      + 'Elles ouvrent aussi ce qu\'on peut poser : sans eau, pas de plage ; sans relief, '
+      + 'pas de montagne.</p>';
+  } else {
+    var ouv = objetsOuverts();
+    if(!ouv.length){
+      out += '<p class="vide">Rien à poser pour l\'instant. Commence par transformer la planète : '
+        + 'la végétation ouvre les arbres et les villages, l\'eau ouvre les plages, '
+        + 'le relief ouvre la montagne.</p>';
+    } else {
+      out += '<div class="grp">Poser sur une case</div>';
+      ouv.forEach(function(k){
+        var o = OBJETS[k];
+        var bios = o.bio.map(function(b){ return NOM_BIOME[b]; }).join(", ");
+        var px = prixObj(k);
+        out += ligne((selObj === k ? "on " : "") + (px > s && selObj !== k ? "cher" : ""),
+          o.ic, o.nom, bios, "◆ " + px);
+      });
+      out += '<p class="vide">Choisis un objet, puis touche une case de la planète. '
+        + 'Pour reprendre quelque chose, touche la case : les cristaux reviennent en entier.</p>';
+    }
+  }
+  L.innerHTML = out;
+  var bs = L.querySelectorAll(".art");
+  Array.prototype.forEach.call(bs, function(b, i){
+    b.addEventListener("click", function(){
+      if(onglet === "terra") acheterTerra(TERRA[i]);
+      else choisirObjet(objetsOuverts()[i]);
+    });
+  });
+}
+function acheterTerra(t){
+  if(M.glob[t.id]) return;
+  if(t.prix > solde()){ dire("Il manque " + (t.prix - solde()) + " cristaux pour " + t.nom.toLowerCase() + "."); return; }
+  M.glob[t.id] = 1; couleursSales = true; sauver();
+  construireGlobe(M.glob); replacerObjets(); majDecor();
+  majSolde(); remplirListe();
+  dire("<b>" + t.nom + "</b> — " + t.s + ".");
+}
+function choisirObjet(k){
+  var o = OBJETS[k], px = prixObj(k);
+  if(selObj === k){ selObj = null; remplirListe(); dire(""); return; }
+  if(px > solde()){ dire("Il manque " + (px - solde()) + " cristaux pour " + o.nom.toLowerCase() + "."); return; }
+  selObj = k; remplirListe();
+  dire("Touche une case de " + o.bio.map(function(b){ return NOM_BIOME[b]; }).join(" ou de ")
+    + " pour poser " + o.nom.toLowerCase() + ".");
+}
+/* Le bandeau du bas porte aussi les gestes possibles à cet instant : descendre
+   sur la case visée, reprendre ce qui est posé, le tourner, le déplacer. Les
+   mettre là plutôt que dans l'atelier les place à côté de ce qu'on regarde. */
+function defaut(){
+  if(VUE === "sol")
+    return "Glisse pour survoler la planète, pince pour monter ou descendre, "
+      + "deux doigts (ou clic droit) pour tourner la tête.";
+  return "Fais tourner la planète avec le doigt. Touche une case pour la voir de près.";
+}
+function dire(html, act){
+  var s = html || defaut(), a = act || null;
+  if(a){
+    if(a.exp !== undefined) s += ' <button class="act" data-a="exp">explorer ↓</button>';
+    if(a.dep) s += ' <button class="act" data-a="dep">déplacer</button>';
+    if(a.tou) s += ' <button class="act" data-a="tou">tourner</button>';
+    if(a.ret !== undefined) s += ' <button class="ret" data-a="ret">retirer</button>';
+    if(a.sup) s += ' <button class="ret" data-a="sup">retirer</button>';
+  }
+  $("info").innerHTML = s;
+  Array.prototype.forEach.call($("info").querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      var q = b.dataset.a;
+      if(q === "exp") descendre(a.exp);
+      else if(q === "ret"){ retirer(a.ret); dire("C'est repris, les cristaux sont revenus."); }
+      else if(q === "sup") retirerSel();
+      else if(q === "tou") tourner();
+      else if(q === "dep"){ armeDeplacer = true; montrerSel(); }
+    });
+  });
+}
+
+/* ═══════════════ viser une case ═══════════════ */
+var ray = new THREE.Raycaster(), souris = new THREE.Vector2();
+function surligner(i){
+  if(i === undefined || i < 0){ contour.visible = false; return; }
+  var cel = CELLS[i], pts = [];
+  /* au sol le diorama passe au-dessus des cases grossières : le contour doit
+     monter d'autant, sinon il disparaît sous le terrain */
+  var e = R0 + hauteurCell(i, M.glob) + (VUE === "orbite" ? .06 : .14);
+  cel.coins.forEach(function(q){ pts.push(new THREE.Vector3(q[0]*e, q[1]*e, q[2]*e)); });
+  contour.geometry.dispose();
+  contour.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+  contour.visible = true;
+}
+function viser(cx, cy){
+  if(VUE !== "orbite"){ if(VUE === "sol") viserSol(cx, cy); return; }
+  var r = renderer.domElement.getBoundingClientRect();
+  souris.x = ((cx - r.left) / r.width) * 2 - 1;
+  souris.y = -((cy - r.top) / r.height) * 2 + 1;
+  ray.setFromCamera(souris, camera);
+  var h = ray.intersectObject(planete, false);
+  if(!h.length){ surligner(-1); return; }
+  var i = cellDe(h[0].point.clone().applyMatrix4(
+    new THREE.Matrix4().copy(monde.matrixWorld).invert()));
+  surligner(i);
+  if(outil){ appliquerOutil(i); return; }
+  if(selBete){ poserBete(i, selBete, { a:alea(i*3)*6.28319, d:.10 + alea(i*5)*.30 }); return; }
+  var d = { b:bioDe(i) }, nom = NOM_BIOME[d.b];
+  if(M.cells[i]){
+    dire(OBJETS[M.cells[i]].nom + " sur " + ART[d.b] + ".", { exp:i, ret:i });
+    return;
+  }
+  if(!selObj){ dire("Une case de " + nom + ".", { exp:i }); return; }
+  var o = OBJETS[selObj];
+  if(o.bio.indexOf(d.b) < 0){
+    dire("Ça ne va pas sur " + ART[d.b] + " — il faut " + o.bio.map(function(b){
+      return ART[b]; }).join(" ou ") + ".");
+    return;
+  }
+  var px = prixObj(selObj);
+  if(px > solde()){ dire("Il manque " + (px - solde()) + " cristaux."); return; }
+  poser(i, selObj);
+  majSolde();
+  if(px > solde()){ selObj = null;
+    dire("C'est posé. Il faudra revenir jouer pour en poser d'autres.", { exp:i }); }
+  else dire("C'est posé. Tu peux continuer, ou descendre le voir de près.", { exp:i });
+  remplirListe();
+}
+
+/* ═══════════════ rotation, zoom, boutons ═══════════════ */
+var drag = false, bouge = false, lx = 0, ly = 0, ptrs = {}, dPinch = 0;
+var cPinch = null, pivot = false;
+function brancher(){
+  var el = renderer.domElement;
+  el.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  el.addEventListener("pointerdown", function(e){
+    ptrs[e.pointerId] = { x:e.clientX, y:e.clientY };
+    if(Object.keys(ptrs).length === 1){
+      drag = true; bouge = false; lx = e.clientX; ly = e.clientY;
+      /* au sol, le glissement déplace ; le bouton droit ou Maj fait tourner
+         la tête sur place */
+      pivot = (e.button === 2 || e.shiftKey);
+      $("scene").classList.add("drag");
+      el.setPointerCapture && el.setPointerCapture(e.pointerId);
+    } else { drag = false; dPinch = 0; cPinch = null; }
+  });
+  el.addEventListener("pointermove", function(e){
+    if(ptrs[e.pointerId]) ptrs[e.pointerId] = { x:e.clientX, y:e.clientY };
+    if(VUE === "descente" || VUE === "remontee") return;
+    var sol = (VUE === "sol");
+    var ks = Object.keys(ptrs);
+    if(ks.length >= 2){
+      var a = ptrs[ks[0]], b = ptrs[ks[1]];
+      var d = Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+      var mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+      if(dPinch){
+        if(sol) solCam.r = Math.max(2.0, Math.min(11, solCam.r - (d - dPinch) * .018));
+        else cam.r = Math.max(R_FIT*.42, Math.min(R_FIT*1.5, cam.r - (d - dPinch) * .07));
+      }
+      /* deux doigts qui glissent ensemble : on tourne la tête */
+      if(sol && cPinch) pivoter(mx - cPinch.x, my - cPinch.y);
+      dPinch = d; cPinch = { x:mx, y:my }; bouge = true; return;
+    }
+    if(!drag) return;
+    var dx = e.clientX - lx, dy = e.clientY - ly;
+    if(Math.abs(dx) + Math.abs(dy) > 9) bouge = true;
+    if(sol){
+      if(pivot) pivoter(dx, dy);
+      else avancer(dx, dy);
+    } else {
+      cam.th -= dx * .006;
+      cam.ph = Math.max(.22, Math.min(2.92, cam.ph - dy * .006));
+    }
+    lx = e.clientX; ly = e.clientY;
+  });
+  function fin(e){
+    delete ptrs[e.pointerId];
+    if(Object.keys(ptrs).length === 0){
+      if(drag && !bouge && !pivot) viser(e.clientX, e.clientY);
+      drag = false; pivot = false; dPinch = 0; cPinch = null;
+      $("scene").classList.remove("drag");
+    }
+  }
+  el.addEventListener("pointerup", fin);
+  el.addEventListener("pointercancel", fin);
+  el.addEventListener("wheel", function(e){
+    e.preventDefault();
+    if(VUE === "sol"){
+      solCam.r = Math.max(2.0, Math.min(11, solCam.r + (e.deltaY > 0 ? .4 : -.4)));
+      return;
+    }
+    if(VUE !== "orbite") return;
+    cam.r = Math.max(R_FIT*.42, Math.min(R_FIT*1.5, cam.r + (e.deltaY > 0 ? R_FIT*.05 : -R_FIT*.05)));
+  }, { passive:false });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".onglets button"), function(b){
+    b.addEventListener("click", function(){
+      onglet = b.dataset.tab; selObj = null; selDec = null; selBete = null;
+      outil = null; presse = null;
+      Array.prototype.forEach.call(document.querySelectorAll(".onglets button"), function(x){
+        x.classList.toggle("on", x === b); });
+      remplirListe();
+    });
+  });
+  $("bSol").addEventListener("click", function(){ remonter(); });
+  $("bExplorer").addEventListener("click", function(){ explorerCentre(); });
+  $("bSauve").addEventListener("click", boiteSauve);
+  $("voile").addEventListener("click", function(e){ if(e.target === $("voile")) fermerBoite(); });
+  if(BAC) brancherBac();
+  $("bOuvrir").addEventListener("click", function(){
+    $("pan").classList.remove("ferme");
+    $("bandeau").classList.remove("large"); $("barre").classList.remove("large");
+  });
+  $("bFermer").addEventListener("click", function(){
+    $("pan").classList.add("ferme");
+    $("bandeau").classList.add("large"); $("barre").classList.add("large");
+  });
+  /* sur téléphone la feuille du bas mange la moitié de l'écran : on la laisse
+     fermée au départ pour que la planète ait toute la place */
+  if(window.innerWidth < 760){
+    $("pan").classList.add("ferme");
+    $("bandeau").classList.add("large"); $("barre").classList.add("large");
+  }
+  $("bRenommer").addEventListener("click", function(){
+    var n = prompt("Comment s'appelle ta planète ?", M.nom);
+    if(n === null) return;
+    n = n.replace(/[<>]/g, "").trim().slice(0, 28);
+    M.nom = n || "Ma planète"; sauver(); majSolde();
+  });
+  if(RETOUR){
+    var b = $("bSortir"); b.hidden = false;
+    b.addEventListener("click", function(){ RETOUR(); });
+  }
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Escape") return;
+    if(!$("voile").hidden){ fermerBoite(); return; }
+    if(VUE === "sol"){
+      if(selSol || selDec){ selSol = null; selDec = null; armeDeplacer = false;
+        surligner(-1); remplirListe(); dire(""); }
+      else remonter();
+      return;
+    }
+    selObj = null; remplirListe(); dire("");
+  });
+}
+/* ═══════════════ le bac à sable ═══════════════
+   Deux boutons seulement, mais ce sont les deux qu'on veut quand on essaie :
+   voir tout de suite ce que donne une planète achevée, et en tirer une autre
+   au sort pour juger de la variété de ce que la graine produit. */
+function brancherBac(){
+  $("pBac").hidden = false; $("bTout").hidden = false; $("bNeuf").hidden = false;
+  $("bFin").hidden = false;
+  var majFin = function(){ $("bFin").textContent = "Finesse : " + CELLS.length; };
+  majFin();
+  /* Changer la finesse, c'est changer le numéro des cases : on repart donc
+     d'un monde neuf. C'est pour cela que le réglage n'existe qu'ici. */
+  $("bFin").addEventListener("click", function(){
+    if(VUE !== "orbite"){ dire("Remonte d'abord en orbite."); return; }
+    M.niv = (M.niv >= 5) ? 3 : M.niv + 1;
+    M.glob = {}; M.cells = {}; M.pos = {}; M.decors = {}; M.terre = {}; M.betes = {};
+    Object.keys(objets).forEach(function(i){ monde.remove(objets[i]); });
+    objets = {}; selObj = null; selDec = null; selBete = null; outil = null; presse = null;
+    sauver(); poserBetes();
+    var t0 = performance.now();
+    preparerMonde();
+    var t1 = performance.now();
+    construireGlobe(M.glob);
+    var t2 = performance.now();
+    majDecor(); poserDecors(); majSolde(); remplirListe(); majFin();
+    dire(CELLS.length + " cases · grille " + Math.round(t1-t0) + " ms · globe "
+      + Math.round(t2-t1) + " ms · " + (planete.geometry.index.count/3) + " triangles.");
+  });
+  $("bTout").addEventListener("click", function(){
+    if(VUE !== "orbite"){ dire("Remonte d'abord en orbite."); return; }
+    TERRA.forEach(function(t){ M.glob[t.id] = 1; });
+    sauver(); construireGlobe(M.glob); majDecor(); replacerObjets();
+    majSolde(); remplirListe();
+    dire("Tout est débloqué : atmosphère, eau, végétation, relief, climat, nuages, lune, anneau.");
+  });
+  $("bNeuf").addEventListener("click", function(){
+    if(VUE !== "orbite"){ dire("Remonte d'abord en orbite."); return; }
+    M.graine = Math.floor(Math.random() * 100000); GRAINE = M.graine;
+    COINS3 = null; couleursSales = true;
+    M.glob = {}; M.cells = {}; M.pos = {}; M.decors = {}; M.terre = {}; M.betes = {};
+    Object.keys(objets).forEach(function(i){ monde.remove(objets[i]); });
+    objets = {}; selObj = null; selDec = null; selBete = null;
+    sauver(); poserBetes();
+    preparerMonde(); construireGlobe(M.glob); majDecor(); poserDecors();
+    majSolde(); remplirListe();
+    dire("Une planète toute neuve — graine " + M.graine + ".");
+  });
+}
+
+/* ═══════════════ code et sauvegarde ═══════════════ */
+function fermerBoite(){ $("voile").hidden = true; }
+function ouvrirBoite(html){
+  $("boite").innerHTML = html;
+  $("voile").hidden = false;
+  var f = $("bFerme");
+  if(f) f.addEventListener("click", fermerBoite);
+}
+/* Le code et le bloc de sauvegarde répondent à la même question — « comment je
+   retrouve ma planète ? » — et tiennent donc dans la même fenêtre. Dans
+   L'Orbite, le code vient du clinicien et la première partie disparaît. */
+function boiteSauve(){
+  var txt = texteDe(M);
+  var partieCode = (DANS_ORBITE || BAC) ? '' :
+      '<h2 class="f">Retrouver ma planète</h2>'
+    + '<p>Sur cet appareil, il suffit de ton code : ta planète est rangée dessous '
+      + 'et revient telle que tu l\'as laissée.</p>'
+    + '<input type="text" id="chCode" value="' + CODE.replace(/"/g, "") + '" '
+      + 'autocomplete="off" spellcheck="false">'
+    + '<div class="rang"><button class="bt pri" id="bOk">Ouvrir cette planète</button></div>'
+    + '<div class="msg" id="msgC"></div>'
+    + '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0">';
+  ouvrirBoite(partieCode
+    + '<h2 class="f">L\'emmener ailleurs</h2>'
+    + '<p>Ta planète est déjà enregistrée ici, toute seule, à chaque changement. '
+      + 'Ce bloc sert à la porter sur un autre appareil : copie-le, envoie-le-toi '
+      + 'par courriel, puis colle-le là-bas et reprends-le. Il ne contient que la '
+      + 'planète — ni ton nom, ni tes résultats.</p>'
+    + '<textarea id="txSauve" spellcheck="false">' + txt + '</textarea>'
+    + '<div class="rang"><button class="bt pri" id="bCopie">Copier</button>'
+      + '<button class="bt" id="bMail">Me l\'envoyer</button>'
+      + '<button class="bt" id="bLire">Reprendre ce qui est collé</button>'
+      + '<button class="bt" id="bFerme">Fermer</button></div>'
+    + '<div class="msg" id="msgS">' + txt.length + ' caractères</div>'
+    + '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0">'
+    + '<h2 class="f">Effacer</h2>'
+    + '<p>Efface cette planète de cet appareil. C\'est immédiat et définitif : si tu '
+      + 'veux pouvoir la retrouver, copie d\'abord le bloc ci-dessus.</p>'
+    + '<div class="rang"><button class="bt dan" id="bEff">Effacer cette planète</button></div>'
+    + '<div class="msg" id="msgE"></div>');
+  $("bEff").addEventListener("click", function(){
+    var b = $("bEff");
+    if(b.dataset.sur !== "1"){
+      b.dataset.sur = "1"; b.textContent = "Confirmer l'effacement";
+      $("msgE").className = "msg mal";
+      $("msgE").textContent = "Touche encore une fois pour effacer pour de bon.";
+      return;
+    }
+    effacerPlanete();
+    fermerBoite();
+    dire("Ta planète a été effacée. Celle-ci est toute neuve.");
+  });
+  if($("bOk")) $("bOk").addEventListener("click", function(){
+    chargerCode($("chCode").value);
+    $("msgC").className = "msg";
+    $("msgC").textContent = "Te voilà sur la planète de « " + CODE + " ».";
+    setTimeout(fermerBoite, 900);
+  });
+  $("bCopie").addEventListener("click", function(){
+    var t = $("txSauve"); t.select(); t.setSelectionRange(0, 999999);
+    var ok = false;
+    try{ ok = document.execCommand("copy"); }catch(e){}
+    if(!ok && navigator.clipboard){ navigator.clipboard.writeText(t.value); ok = true; }
+    $("msgS").className = "msg";
+    $("msgS").textContent = ok ? "Copié. Colle-le où tu veux le garder."
+      : "Sélectionne le texte et copie-le à la main.";
+  });
+  $("bMail").addEventListener("click", function(){
+    location.href = "mailto:?subject=" + encodeURIComponent("Ma planète — " + M.nom)
+      + "&body=" + encodeURIComponent("Garde ce bloc : il contient ta planète.\n\n"
+        + $("txSauve").value + "\n");
+  });
+  $("bLire").addEventListener("click", function(){
+    var M2 = lireTexte($("txSauve").value);
+    if(!M2){
+      $("msgS").className = "msg mal";
+      $("msgS").textContent = "Ce bloc n'est pas lisible — il a dû être coupé. "
+        + "Recopie-le en entier.";
+      return;
+    }
+    adopter(M2); sauver();
+    $("msgS").className = "msg";
+    $("msgS").textContent = "Planète reprise : « " + M.nom + " ».";
+    setTimeout(fermerBoite, 900);
+  });
+}
+
+/* La distance qui fait tenir la planète dans le cadre. En portrait c'est la
+   largeur qui commande, et de loin : sans ce calcul, le globe déborde des deux
+   côtés sur un téléphone. */
+var R_FIT = 38, premierCadre = true;
+function redim(){
+  if(!renderer) return;
+  var w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w/h;
+  var etroit = w < 760;
+  if(etroit) camera.setViewOffset(w, h, 0, h*.055, w, h);
+  else camera.setViewOffset(w, h, w*.11, 0, w, h);
+  var tv = Math.tan(camera.fov * Math.PI/360), besoin = 13.4;
+  R_FIT = Math.max(besoin / tv, besoin / (tv * camera.aspect));
+  if(premierCadre){ cam.r = R_FIT; premierCadre = false; }
+  cam.r = Math.max(R_FIT * .42, Math.min(R_FIT * 1.5, cam.r));
+  camera.updateProjectionMatrix();
+}
+
+/* ═══════════════ la boucle ═══════════════ */
+var dernier = 0;
+function boucle(tt){
+  requestAnimationFrame(boucle);
+  var dt = dernier ? Math.min(.05, (tt - dernier)/1000) : .016;
+  /* le temps réel, pour ce qui doit avancer à l'horloge et non à l'image : sur
+     un appareil lent, une bête qui marcherait au rythme des images resterait
+     sur place au lieu d'être simplement saccadée */
+  var dtr = dernier ? Math.min(.25, (tt - dernier)/1000) : .016;
+  dernier = tt;
+  /* hors de l'orbite la planète est figée : sans cela l'horizon dériverait
+     sous les pieds du patient pendant qu'il aménage */
+  if(VUE === "orbite" && !drag) monde.rotation.y += dt * .035;
+  if(nuages) nuages.rotation.y += dt * .055;
+  if(lune){
+    var a = tt/9000;
+    lune.position.set(Math.cos(a)*22, Math.sin(a*.7)*5, Math.sin(a)*22);
+    lune.rotation.y = -a;
+  }
+  if(VUE !== "orbite"){ houle(dtr); animerBetes(dtr); }
+  majCam(dt);
+  renderer.render(scene, camera);
+}
+
+/* ═══════════════ départ ═══════════════ */
+setTimeout(function(){
+  var t0 = performance.now();
+  initMat();
+  construire();
+  brancher();
+  majSolde(); majPanneau(); dire("");
+  $("charge").hidden = true;
+  /* poignée de mise au point : L'Orbite n'en a pas besoin, mais elle permet de
+     vérifier la descente et la pose sans passer par le doigt */
+  window.__MONDE = {
+    etat:function(){ return { vue:VUE, cell:SOL_CELL, solde:solde(), props:props.length,
+      decors:decorsG.length, det:detailles.slice(), tr:TR ? +TR.t.toFixed(2) : null,
+      cam:camera.position.toArray().map(function(x){ return +x.toFixed(2); }),
+      alt:+(camera.position.length() - R0).toFixed(2), brume:+scene.fog.density.toFixed(4),
+      ciel:+cielS.material.opacity.toFixed(2),
+      pos:solPos.toArray().map(function(x){ return +x.toFixed(3); }),
+      lat:+(Math.asin(Math.max(-1, Math.min(1, solPos.y))) * 57.2958).toFixed(1),
+      biome:SOL_CELL >= 0 ? bioDe(SOL_CELL) : null }; },
+    avancer:avancer, pivoter:pivoter, explorerCentre:explorerCentre,
+    rebatir:function(){ var i = cellDe(solPos); construirePatch(i, M.glob); semerProps(M.glob); detaillerObjets(true); },
+    descendre:descendre, remonter:remonter, viser:viserSol, tourner:tourner,
+    choisirDecor:choisirDecor, retirerSel:retirerSel,
+    sel:function(){ return selSol ? selSol.userData : null; },
+    prendre:function(n){ selSol = decorsG[n] || null; return selSol ? selSol.userData : null; },
+    deplacer:function(){ armeDeplacer = true; },
+    acheter:function(id){ TERRA.forEach(function(t){ if(t.id === id) acheterTerra(t); }); },
+    poserObj:function(i, k){ poser(i, k); majSolde(); remplirListe(); },
+    biomes:function(){ return INFO.map(function(d, i){ return bioDe(i); }); },
+    scene:function(){ return scene; }, three:function(){ return THREE; },
+    niveau:function(n){ if(n === undefined) return { niv:M.niv, cases:CELLS.length,
+        rcell:+RCELL.toFixed(3), nsub:NSUB, rangs:RANGS, pas:+PAS.toFixed(3) };
+      M.niv = n; M.glob = {}; M.cells = {}; M.pos = {}; M.decors = {}; M.terre = {};
+      M.betes = {}; poserBetes();
+      Object.keys(objets).forEach(function(i){ monde.remove(objets[i]); }); objets = {};
+      sauver();
+      var t0 = performance.now(); preparerMonde();
+      var t1 = performance.now(); construireGlobe(M.glob);
+      var t2 = performance.now(); majDecor(); poserDecors(); majSolde(); remplirListe();
+      return { cases:CELLS.length, grille:+(t1-t0).toFixed(1), globe:+(t2-t1).toFixed(1),
+        tris:planete.geometry.index.count/3, rcell:+RCELL.toFixed(3), nsub:NSUB, rangs:RANGS }; },
+    chrono:function(){ var t0 = performance.now(); construireGlobe(M.glob);
+      var t1 = performance.now();
+      var d = patchCells ? patchCells.length : 0;
+      return { globe:+(t1-t0).toFixed(1), patchCells:d }; },
+    chronoPatch:function(){ var t0 = performance.now();
+      construirePatch(cellDe(solPos), M.glob); semerProps(M.glob);
+      return { ms:+(performance.now()-t0).toFixed(1), cases:patchCells.length,
+        tris:patch.geometry.index.count/3 }; },
+    outil:function(k){ outil = k; }, appliquer:function(i){ return appliquerOutil(i); },
+    decors:function(){ return ORDRE_DEC.slice(); },
+    betes:function(){ return ORDRE_B.concat(ORDRE_C); },
+    poserBete:function(i, k, a, d){ M.betes[i] = M.betes[i] || [];
+      M.betes[i].push({ k:k, a:a||0, d:d===undefined?.3:d, r:0 }); sauver(); poserBetes(); },
+    choisirBete:choisirBete, texteDe:texteDe, lireTexte:lireTexte,
+    adopter:adopter, chargerCode:chargerCode, code:function(){ return CODE; },
+    sauver:sauver, renommer:function(n){ M.nom = n; sauver(); majSolde(); },
+    cellules:function(){ return betesVives.map(function(g){
+      return { k:g.userData.k, cv:g.userData.cv, maison:g.userData.cell,
+        zone:g.userData.zone ? g.userData.zone.length : 0 }; }); },
+    sauts:function(){ return NSAUTS; },
+    forcerSaut:function(n){ var g = betesVives[n||0]; if(!g) return null;
+      var u = g.userData;
+      var v = (VOISINS[u.cv]||[]).filter(function(c){ return u.zone.indexOf(c) >= 0; });
+      if(!v.length) return null;
+      u.pause = 0; u.migre = v[0]; u.a = capVers(u.cv, u.migre); u.d = .90;
+      placerBete(g); lancerSaut(g);
+      return { k:u.k, de:u.cv, vers:u.migre, h:+u.cross.h.toFixed(3),
+        dur:+u.cross.dur.toFixed(2) }; },
+    pas:function(dt, n){ animerBetes(dt);
+      var g = betesVives[n||0];
+      return g ? { alt:+(g.position.length() - R0).toFixed(3),
+        cross:!!g.userData.cross, cv:g.userData.cv } : null; },
+    enVol:function(){ return betesVives.filter(function(g){ return !!g.userData.cross; })
+      .map(function(g){ return +(g.position.length() - R0).toFixed(3); }); },
+    positions:function(){ return betesVives.map(function(g){
+      return g.position.toArray().map(function(x){ return +x.toFixed(4); }); }); },
+    vivants:function(){ return { poses:betesG.length, animes:betesVives.length,
+      gra:soldeGra(), depB:depenseBetes() }; },
+    poserDec:function(i, k, a, d){ M.decors[i] = M.decors[i] || [];
+      M.decors[i].push({ k:k, a:a||0, d:d===undefined?.4:d, r:0 }); sauver(); poserDecors(); }
+  };
+  /* M est remplacé quand on change de code ou qu'on reprend une sauvegarde :
+     un accesseur, sinon la poignée garderait l'ancienne planète */
+  Object.defineProperty(window.__MONDE, "M", { get:function(){ return M; } });
+  if(window.console && console.info)
+    console.info("monde assemble en", Math.round(performance.now() - t0), "ms ·",
+      CELLS.length, "cellules");
+  requestAnimationFrame(boucle);
+}, 30);
+})();
+</script>
+</body>
+</html>
