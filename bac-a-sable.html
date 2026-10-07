@@ -2047,6 +2047,10 @@ function poserDecors(){
       var f = FAIRE_D[q.k]; if(!f) return;
       var g = f();
       g.userData = { cell:i, idx:n, type:"dec" };
+      /* comme les objets : un décor tient dans sa case, il rétrécit quand on
+         affine la grille. Sans cela, à 2562 cases un arbre en couvre quatre.
+         multiplyScalar et non setScalar : certains décors ont leur propre taille. */
+      g.scale.multiplyScalar(ECHC);
       placerLibre(i, g, q);
       g.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
       monde.add(g); decorsG.push(g);
@@ -3082,6 +3086,11 @@ function poserBetes(){
     L.forEach(function(q, n){
       if(!defBete(q.k)) return;
       var g = faireBete(q.k);
+      /* même règle que les objets et les décors : la bête est à l'échelle de
+         la case. ECHC vaut 1 à 642 cases ; tout ce qui suit — taille, vitesse,
+         hauteur de vol, bonds — se mesure en unités de case et suit ce facteur. */
+      g.scale.multiplyScalar(ECHC);
+      g.userData.s0 = g.scale.x;   /* taille de repos, pour revenir après un bond */
       g.userData.cell = i; g.userData.idx = n; g.userData.type = "bete"; g.userData.k = q.k;
       reveiller(g, q);
       g.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
@@ -3123,9 +3132,9 @@ function reveiller(g, q){
   u.marche = 0; u.pause = 0; u.cross = null; u.migre = -1;
   u.vol = d.vol; u.nage = d.nage; u.saut = d.saut;
   u.flotte = d.flotte; u.saute = d.saute;
-  u.haut = d.haut || .45;            /* hauteur de flottaison */
-  u.plonge = d.plonge || 0;          /* de combien le corps s'enfonce */
-  u.vitesse = d.v || (u.vol ? .38 : (u.nage ? .17 : .13));
+  u.haut = (d.haut || .45) * ECHC;   /* hauteur de flottaison */
+  u.plonge = (d.plonge || 0) * ECHC; /* de combien le corps s'enfonce */
+  u.vitesse = (d.v || (u.vol ? .38 : (u.nage ? .17 : .13))) * ECHC;
   /* le domaine : les cases habitables à deux pas de la maison */
   u.zone = autourDe(u.cell, 2).filter(function(v){ return d.bio.indexOf(bioDe(v)) >= 0; });
   if(u.zone.indexOf(u.cell) < 0) u.zone.push(u.cell);
@@ -3168,7 +3177,7 @@ function lancerSaut(g){
      est ce qui distingue « elle a changé de case » de « elle a glissé ». */
   u.cross = { t:0, dur:(u.vol || u.nage || u.flotte) ? .9 + dh : .46 + dh * .42,
               de:de, vers:vers, dh:dh,
-              h:(u.vol || u.nage || u.flotte) ? 0 : (.085 + dh * .55),
+              h:(u.vol || u.nage || u.flotte) ? 0 : (.085 * ECHC + dh * .55),
               cell:B, a:aB };
   u.migre = -1;
 }
@@ -3176,8 +3185,8 @@ function placerBete(g){
   var u = g.userData;
   var p = pointCell(u.cv, u.a, u.d, M.glob);
   var n = p.clone().normalize();
-  if(u.vol) p.addScaledVector(n, .85 + .25 * Math.sin(u.marche * .7));
-  else if(u.flotte) p.addScaledVector(n, u.haut + .08 * Math.sin(u.marche * 1.6));
+  if(u.vol) p.addScaledVector(n, (.85 + .25 * Math.sin(u.marche * .7)) * ECHC);
+  else if(u.flotte) p.addScaledVector(n, u.haut + .08 * ECHC * Math.sin(u.marche * 1.6));
   else if(u.plonge) p.addScaledVector(n, -u.plonge);
   g.position.copy(p);
   orienterVers(g, p, u.fwd);
@@ -3255,7 +3264,7 @@ function animerBetes(dt){
     /* ── la traversée ── */
     if(u.cross){
       var cr = u.cross;
-      if(!cr.t) g.scale.set(1, 1, 1);
+      if(!cr.t) g.scale.setScalar(u.s0);
       cr.t += dt;
       var q = Math.min(1, cr.t / cr.dur), e = q*q*(3 - 2*q);
       var p = cr.de.clone().lerp(cr.vers, e);
@@ -3331,8 +3340,8 @@ function animerBetes(dt){
     if(u.saute){
       /* ce qui avance par bonds : lapin, marmotte, ploc */
       var h = Math.abs(Math.sin(u.marche * 1.9)) * .12;
-      g.position.addScaledVector(g.position.clone().normalize(), h);
-      g.scale.set(1 + h*.6, 1 - h*.7, 1 + h*.6);
+      g.position.addScaledVector(g.position.clone().normalize(), h * ECHC);
+      g.scale.set((1 + h*.6) * u.s0, (1 - h*.7) * u.s0, (1 + h*.6) * u.s0);
       continue;
     }
     if(u.nage){
@@ -3341,7 +3350,7 @@ function animerBetes(dt){
         var ph = (u.marche * .22) % 6.28319;
         if(ph < 2.2){
           var s2 = Math.sin(ph / 2.2 * Math.PI);
-          g.position.addScaledVector(g.position.clone().normalize(), s2 * .30);
+          g.position.addScaledVector(g.position.clone().normalize(), s2 * .30 * ECHC);
           g.rotateX(-Math.cos(ph / 2.2 * Math.PI) * .6);
         }
       }
@@ -4143,6 +4152,8 @@ setTimeout(function(){
     outil:function(k){ outil = k; }, appliquer:function(i){ return appliquerOutil(i); },
     decors:function(){ return ORDRE_DEC.slice(); },
     betes:function(){ return ORDRE_B.concat(ORDRE_C); },
+    poserDec:function(i, k, a, d){ M.decors[i] = M.decors[i] || [];
+      M.decors[i].push({ k:k, a:a||0, d:d===undefined?.3:d, r:0 }); sauver(); poserDecors(); },
     poserBete:function(i, k, a, d){ M.betes[i] = M.betes[i] || [];
       M.betes[i].push({ k:k, a:a||0, d:d===undefined?.3:d, r:0 }); sauver(); poserBetes(); },
     choisirBete:choisirBete, texteDe:texteDe, lireTexte:lireTexte,
